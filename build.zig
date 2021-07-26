@@ -2,10 +2,10 @@ const std = @import("std");
 const classgen = @import("classgen.zig");
 
 pub fn build(b: *std.build.Builder) void {
-    const mode = std.builtin.Mode.ReleaseSafe; // ziglang/zig#7935
+    const mode = std.builtin.Mode.ReleaseFast; // ziglang/zig#7935
     const target = b.standardTargetOptions(.{
         .default_target = std.zig.CrossTarget.parse(.{
-            .arch_os_abi = "i386-native",
+            .arch_os_abi = "i386-native-gnu",
         }) catch unreachable,
     });
 
@@ -13,6 +13,7 @@ pub fn build(b: *std.build.Builder) void {
     lib.addPackage(classgen.pkg(b, "sdk", "sdk"));
     lib.setBuildMode(mode);
     lib.setTarget(target);
+    lib.linkLibC();
     lib.install();
 
     var main_tests = b.addTest("src/main.zig");

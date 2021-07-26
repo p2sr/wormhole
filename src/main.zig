@@ -9,6 +9,14 @@ const Method = switch (std.builtin.os.tag) {
 fn load(_: *sdk.IServerPluginCallbacks, interfaceFactory: sdk.CreateInterfaceFn, gameServerFactory: sdk.CreateInterfaceFn) callconv(Method) bool {
     _ = interfaceFactory;
     _ = gameServerFactory;
+
+    var tier0 = std.DynLib.open("libtier0.so") catch return false;
+
+    const DevMsgType = fn (format: [*:0]const u8, ...) callconv(.C) void;
+    const devMsg = tier0.lookup(DevMsgType, "_Z6DevMsgPKcz") orelse return false;
+
+    devMsg("Hi!\n");
+
     return true;
 }
 
