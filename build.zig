@@ -1,9 +1,11 @@
 const std = @import("std");
+const classgen = @import("classgen.zig");
 
 pub fn build(b: *std.build.Builder) void {
     const mode = b.standardReleaseOptions();
 
     const lib = b.addSharedLibrary("wormhole", "src/main.zig", .unversioned);
+    lib.addPackage(classgen.pkg(b, "class", "class/"));
     lib.setBuildMode(mode);
     lib.install();
 
