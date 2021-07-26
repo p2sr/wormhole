@@ -3,10 +3,16 @@ const classgen = @import("classgen.zig");
 
 pub fn build(b: *std.build.Builder) void {
     const mode = b.standardReleaseOptions();
+    const target = b.standardTargetOptions(.{
+        .default_target = std.zig.CrossTarget.parse(.{
+            .arch_os_abi = "i386-native",
+        }) catch unreachable,
+    });
 
     const lib = b.addSharedLibrary("wormhole", "src/main.zig", .unversioned);
     lib.addPackage(classgen.pkg(b, "sdk", "sdk"));
     lib.setBuildMode(mode);
+    lib.setTarget(target);
     lib.install();
 
     var main_tests = b.addTest("src/main.zig");

@@ -117,6 +117,7 @@ const ClassGenerator = struct {
             var toks = std.mem.split(line, "\t");
 
             const zig_name = toks.next() orelse continue;
+            if (zig_name.len == 0) continue;
             if (zig_name[0] == '#') continue;
 
             const dispatch_group = toks.next() orelse {
