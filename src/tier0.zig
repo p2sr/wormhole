@@ -20,8 +20,15 @@ pub var devMsg: FmtFn = undefined;
 pub var devWarning: FmtFn = undefined;
 
 const names = switch (std.builtin.os.tag) {
-    .windows => @compileError("Windows not yet supported"),
-    else => .{
+    .windows => .{
+        .lib = "tier0.dll",
+        .msg = "Msg",
+        .warning = "Warning",
+        .colorMsg = "?ConColorMsg@@YAXABVColor@@PBDZZ",
+        .devMsg = "?DevMsg@@YAXPBDZZ",
+        .devWarning = "?DevWarning@@YAXPBDZZ",
+    },
+    .linux => .{
         .lib = "libtier0.so",
         .msg = "Msg",
         .warning = "Warning",
@@ -29,4 +36,6 @@ const names = switch (std.builtin.os.tag) {
         .devMsg = "_Z6DevMsgPKcz",
         .devWarning = "_Z10DevWarningPKcz",
     },
+    .macos => @compileError("macOS not yet supported"),
+    else => @compileError("Unsupported OS"),
 };
