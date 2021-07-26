@@ -10,6 +10,7 @@ pub fn build(b: *std.build.Builder) void {
     });
 
     const lib = b.addSharedLibrary("wormhole", "src/main.zig", .unversioned);
+    lib.force_pic = true;
     lib.addPackage(classgen.pkg(b, "sdk", "sdk"));
     lib.setBuildMode(mode);
     lib.setTarget(target);
