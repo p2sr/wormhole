@@ -90,9 +90,8 @@ const ClassGenerator = struct {
     }
 
     pub fn zigFile(self: *ClassGenerator, filename: []const u8) !void {
-        try self.print("pub usingnamespace @import(\"{}\");\n", .{
-            std.zig.fmtEscapes(filename),
-        });
+        const path = try std.fs.cwd().realpathAlloc(self.allocator, filename);
+        try self.print("pub usingnamespace @import(\"{}\");\n", .{std.zig.fmtEscapes(path)});
     }
 
     pub fn classFromFilename(self: *ClassGenerator, filename: []const u8) !void {
