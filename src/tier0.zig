@@ -11,12 +11,19 @@ pub fn init() !void {
     }
 }
 
-pub var devMsg: fn (fmt: [*:0]const u8, ...) callconv(.C) void = undefined;
+const FmtFn = fn (fmt: [*:0]const u8, ...) callconv(.C) void;
+pub var msg: FmtFn = undefined;
+pub var warning: FmtFn = undefined;
+pub var devMsg: FmtFn = undefined;
+pub var devWarning: FmtFn = undefined;
 
 const names = switch (std.builtin.os.tag) {
     .windows => @compileError("Windows not yet supported"),
     else => .{
         .lib = "libtier0.so",
+        .msg = "Msg",
+        .warning = "Warning",
         .devMsg = "_Z6DevMsgPKcz",
+        .devWarning = "_Z10DevWarningPKcz",
     },
 };

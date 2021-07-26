@@ -12,7 +12,7 @@ fn load(_: *sdk.IServerPluginCallbacks, interfaceFactory: sdk.CreateInterfaceFn,
     _ = gameServerFactory;
 
     tier0.init() catch return false;
-    tier0.devMsg("Hi!\n");
+    tier0.msg("Hi!\n");
 
     return true;
 }
