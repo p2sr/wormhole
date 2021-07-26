@@ -1,7 +1,7 @@
 const std = @import("std");
 const sdk = @import("sdk");
 
-var ifaces_internal = blk: {
+var ifaces_internal = blk: { // This is a workaround for a weird result location bug, will be fixed in stage2
     var i: Ifaces = undefined;
     break :blk i;
 };
