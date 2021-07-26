@@ -5,7 +5,7 @@ pub fn build(b: *std.build.Builder) void {
     const mode = b.standardReleaseOptions();
 
     const lib = b.addSharedLibrary("wormhole", "src/main.zig", .unversioned);
-    lib.addPackage(classgen.pkg(b, "sdk", "sdk/"));
+    lib.addPackage(classgen.pkg(b, "sdk", "sdk"));
     lib.setBuildMode(mode);
     lib.install();
 

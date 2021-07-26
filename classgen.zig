@@ -2,10 +2,25 @@ const std = @import("std");
 
 pub fn pkg(b: *std.build.Builder, pkg_name: []const u8, dir: []const u8) std.build.Pkg {
     const step = ClassGenStep.init(b, pkg_name, dir);
-    return .{
+
+    // Create main pkg
+    var main_pkg = std.build.Pkg{
         .name = pkg_name,
         .path = .{ .generated = &step.out_file },
     };
+
+    // Create internal pkg
+    const internal_main = std.fs.path.join(b.allocator, &.{ dir, "main.zig" }) catch unreachable;
+    const internal_pkg = std.build.Pkg{
+        .name = "classgen_internal",
+        .path = .{ .path = internal_main },
+        .dependencies = b.allocator.dupe(std.build.Pkg, &.{main_pkg}) catch unreachable,
+    };
+
+    // Add internal pkg as main pkg dep
+    main_pkg.dependencies = b.allocator.dupe(std.build.Pkg, &.{internal_pkg}) catch unreachable;
+
+    return main_pkg;
 }
 
 const ClassGenStep = struct {
@@ -30,23 +45,19 @@ const ClassGenStep = struct {
         const self = @fieldParentPtr(ClassGenStep, "step", step);
 
         var gen = try ClassGenerator.init(self.b.allocator);
-        const dir = try std.fs.cwd().openDir(self.dir, .{
-            .access_sub_paths = false,
-            .iterate = true,
-        });
-        var it = dir.iterate();
-        while (try it.next()) |entry| {
+        var walker = try std.fs.walkPath(self.b.allocator, self.dir);
+        while (try walker.next()) |entry| {
             if (entry.kind != .File) continue;
-            if (std.mem.startsWith(u8, entry.name, ".")) continue;
-            if (std.mem.endsWith(u8, entry.name, ".zig")) {
-                try gen.zigFile(entry.name);
+            if (std.mem.startsWith(u8, entry.basename, ".")) continue;
+            if (std.mem.endsWith(u8, entry.basename, ".zig")) {
+                try gen.zigImport("classgen_internal");
             } else {
-                try gen.classFromFilename(entry.name);
+                try gen.classFromFilename(entry.path);
             }
         }
         const code = try gen.finish();
 
-        const f = try std.fs.cwd().createFile(self.out_file.path orelse unreachable, .{});
+        const f = try std.fs.cwd().createFile(self.out_file.path.?, .{});
         defer f.close();
         try f.writeAll(code);
     }
@@ -89,9 +100,8 @@ const ClassGenerator = struct {
         return tree.render(self.allocator);
     }
 
-    pub fn zigFile(self: *ClassGenerator, filename: []const u8) !void {
-        const path = try std.fs.cwd().realpathAlloc(self.allocator, filename);
-        try self.print("pub usingnamespace @import(\"{}\");\n", .{std.zig.fmtEscapes(path)});
+    pub fn zigImport(self: *ClassGenerator, filename: []const u8) !void {
+        try self.print("pub usingnamespace @import(\"{}\");\n", .{std.zig.fmtEscapes(filename)});
     }
 
     pub fn classFromFilename(self: *ClassGenerator, filename: []const u8) !void {
