@@ -1,6 +1,6 @@
 const std = @import("std");
-const class = @import("class");
+const sdk = @import("sdk");
 
 comptime {
-    _ = class;
+    _ = sdk;
 }

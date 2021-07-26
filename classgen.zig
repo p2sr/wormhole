@@ -36,7 +36,11 @@ const ClassGenStep = struct {
         });
         var it = dir.iterate();
         while (try it.next()) |entry| {
-            if (entry.kind == .File and !std.mem.startsWith(u8, entry.name, ".")) {
+            if (entry.kind != .File) continue;
+            if (std.mem.startsWith(u8, entry.name, ".")) continue;
+            if (std.mem.endsWith(u8, entry.name, ".zig")) {
+                try gen.zigFile(entry.name);
+            } else {
                 try gen.classFromFilename(entry.name);
             }
         }
@@ -83,6 +87,12 @@ const ClassGenerator = struct {
         }
 
         return tree.render(self.allocator);
+    }
+
+    pub fn zigFile(self: *ClassGenerator, filename: []const u8) !void {
+        try self.print("pub usingnamespace @import(\"{}\");\n", .{
+            std.zig.fmtEscapes(filename),
+        });
     }
 
     pub fn classFromFilename(self: *ClassGenerator, filename: []const u8) !void {
