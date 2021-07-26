@@ -1,6 +1,7 @@
 const std = @import("std");
 const sdk = @import("sdk");
 const tier0 = @import("tier0.zig");
+const interface = @import("interface.zig");
 
 const Method = switch (std.builtin.os.tag) {
     .windows => std.builtin.CallingConvention.Thiscall,
@@ -13,6 +14,9 @@ fn load(_: *sdk.IServerPluginCallbacks, interfaceFactory: sdk.CreateInterfaceFn,
 
     tier0.init() catch return false;
     tier0.colorMsg(&.{ .r = 0, .g = 250, .b = 255 }, "Hi!\n");
+
+    interface.init() catch return false;
+    tier0.devMsg("Initialized ALL the things!\n");
 
     return true;
 }
