@@ -1,7 +1,10 @@
 const std = @import("std");
 const sdk = @import("sdk");
 
-var ifaces_internal: Ifaces = undefined;
+var ifaces_internal = blk: {
+    var i: Ifaces = undefined;
+    break :blk i;
+};
 pub const ifaces = &ifaces_internal;
 
 const locations = .{
@@ -43,7 +46,7 @@ pub const Ifaces = blk: {
             .field_type = *T,
             .default_value = null,
             .is_comptime = false,
-            .alignment = @alignOf(T),
+            .alignment = @alignOf(*T),
         };
     }
 
