@@ -1,4 +1,5 @@
 const std = @import("std");
+const sdk = @import("sdk");
 
 pub fn init() !void {
     var lib = try std.DynLib.open(names.lib);
@@ -14,6 +15,7 @@ pub fn init() !void {
 const FmtFn = fn (fmt: [*:0]const u8, ...) callconv(.C) void;
 pub var msg: FmtFn = undefined;
 pub var warning: FmtFn = undefined;
+pub var colorMsg: fn (color: *const sdk.Color, fmt: [*:0]const u8, ...) callconv(.C) void = undefined;
 pub var devMsg: FmtFn = undefined;
 pub var devWarning: FmtFn = undefined;
 
@@ -23,6 +25,7 @@ const names = switch (std.builtin.os.tag) {
         .lib = "libtier0.so",
         .msg = "Msg",
         .warning = "Warning",
+        .colorMsg = "_Z11ConColorMsgRK5ColorPKcz",
         .devMsg = "_Z6DevMsgPKcz",
         .devWarning = "_Z10DevWarningPKcz",
     },

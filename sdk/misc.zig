@@ -6,3 +6,10 @@ pub const CreateInterfaceFn = fn (name: [*:0]const u8, ret: *c_int) callconv(.C)
 pub const ServerClass = opaque {};
 pub const CBaseNetworkable = opaque {};
 pub const CCommand = opaque {};
+
+pub const Color = extern struct {
+    r: u8,
+    g: u8,
+    b: u8,
+    a: u8 = 255,
+};
