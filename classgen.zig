@@ -482,13 +482,30 @@ const TypeDesc = union(enum) {
                 if (variadic) {
                     return error.WrongToken;
                 }
-                if (tok.tag == .ellipsis3) {
-                    variadic = true;
-                } else {
-                    try args.append(try self.parse(tok));
+
+                var sep: ?std.zig.Token = null;
+                switch (tok.tag) {
+                    .ellipsis3 => variadic = true,
+                    .identifier => {
+                        // Might be a name or a type
+                        const tok2 = self.toks.next();
+                        switch (tok2.tag) {
+                            .colon => { // Name
+                                try args.append(try self.parse(self.toks.next()));
+                            },
+                            .comma, .r_paren => { // Type
+                                sep = tok2;
+                                try args.append(TypeDesc{
+                                    .named = self.toks.buffer[tok.loc.start..tok.loc.end],
+                                });
+                            },
+                            else => return error.WrongToken,
+                        }
+                    },
+                    else => try args.append(try self.parse(tok)),
                 }
-                const sep = self.toks.next();
-                switch (sep.tag) {
+
+                switch ((sep orelse self.toks.next()).tag) {
                     .comma => {},
                     .r_paren => break,
                     else => return error.WrongToken,
