@@ -52,7 +52,10 @@ const ClassGenStep = struct {
             if (std.mem.endsWith(u8, entry.basename, ".zig")) {
                 try gen.zigImport("classgen_internal");
             } else {
-                try gen.classFromFilename(entry.path);
+                gen.classFromFilename(entry.path) catch |err| switch (err) {
+                    error.InvalidFormat => std.os.exit(1),
+                    else => |e| return e,
+                };
             }
         }
         const code = try gen.finish();
@@ -121,28 +124,28 @@ const ClassGenerator = struct {
             if (zig_name[0] == '#') continue;
 
             const dispatch_group = toks.next() orelse {
-                std.debug.print("Missing dispatch group on line {}\n", .{line_no});
+                std.debug.print("Missing dispatch group at {s}:{}\n", .{ filename, line_no });
                 return error.InvalidFormat;
             };
 
             const signature_s = toks.next() orelse {
-                std.debug.print("Missing method signature on line {}\n", .{line_no});
+                std.debug.print("Missing method signature at {s}:{}\n", .{ filename, line_no });
                 return error.InvalidFormat;
             };
 
             if (toks.next() != null) {
-                std.debug.print("Unexpected extra fields on line {}\n", .{line_no});
+                std.debug.print("Unexpected extra fields at {s}:{}\n", .{ filename, line_no });
                 return error.InvalidFormat;
             }
 
             const signature_z = try self.allocator.dupeZ(u8, signature_s);
             const signature = (try TypeDesc.parse(self.allocator, signature_z)) orelse {
-                std.debug.print("Invalid signature type on line {}\n", .{line_no});
+                std.debug.print("Invalid signature type at {s}:{}\n", .{ filename, line_no });
                 return error.InvalidFormat;
             };
 
             if (signature != .func) {
-                std.debug.print("Invalid signature type on line {}\n", .{line_no});
+                std.debug.print("Invalid signature type at {s}:{}\n", .{ filename, line_no });
                 return error.InvalidFormat;
             }
 
