@@ -1,5 +1,6 @@
 const std = @import("std");
 const sdk = @import("sdk");
+const tier0 = @import("tier0.zig");
 
 const Method = switch (std.builtin.os.tag) {
     .windows => std.builtin.CallingConvention.Thiscall,
@@ -10,12 +11,8 @@ fn load(_: *sdk.IServerPluginCallbacks, interfaceFactory: sdk.CreateInterfaceFn,
     _ = interfaceFactory;
     _ = gameServerFactory;
 
-    var tier0 = std.DynLib.open("libtier0.so") catch return false;
-
-    const DevMsgType = fn (format: [*:0]const u8, ...) callconv(.C) void;
-    const devMsg = tier0.lookup(DevMsgType, "_Z6DevMsgPKcz") orelse return false;
-
-    devMsg("Hi!\n");
+    tier0.init() catch return false;
+    tier0.devMsg("Hi!\n");
 
     return true;
 }
