@@ -45,9 +45,7 @@ fn gameFrame(_: *sdk.IServerPluginCallbacks, simulating: bool) callconv(Method) 
     _ = simulating;
 }
 
-fn levelShutdown(
-    _: *sdk.IServerPluginCallbacks,
-) callconv(Method) void {}
+fn levelShutdown(_: *sdk.IServerPluginCallbacks) callconv(Method) void {}
 
 fn clientActive(_: *sdk.IServerPluginCallbacks, entity: *sdk.Edict) callconv(Method) void {
     _ = entity;
