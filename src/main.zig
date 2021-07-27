@@ -2,26 +2,54 @@ const std = @import("std");
 const sdk = @import("sdk");
 const tier0 = @import("tier0.zig");
 const interface = @import("interface.zig");
+const mods = @import("mods.zig");
+const log = @import("log.zig");
+
+var gpa: std.heap.GeneralPurposeAllocator(.{}) = undefined;
+
+fn init() !void {
+    gpa = .{};
+    errdefer std.debug.assert(!gpa.deinit());
+
+    try tier0.init();
+
+    try interface.init();
+
+    try mods.init(&gpa.allocator);
+    errdefer mods.deinit();
+}
+
+fn deinit() void {
+    mods.deinit();
+    std.debug.assert(!gpa.deinit());
+}
+
+// Plugin callbacks below
 
 const Method = switch (std.builtin.os.tag) {
     .windows => std.builtin.CallingConvention.Thiscall,
     else => std.builtin.CallingConvention.C,
 };
 
+// For some reason the game calls 'unload' if 'load' fails. We really don't
+// want this, so we just ignore calls to 'unload' unless we're fully loaded
+var loaded = false;
+
 fn load(_: *sdk.IServerPluginCallbacks, interfaceFactory: sdk.CreateInterfaceFn, gameServerFactory: sdk.CreateInterfaceFn) callconv(Method) bool {
     _ = interfaceFactory;
     _ = gameServerFactory;
 
-    tier0.init() catch return false;
-    tier0.colorMsg(&.{ .r = 0, .g = 250, .b = 255 }, "Hi!\n");
+    init() catch return false;
 
-    interface.init() catch return false;
-    tier0.devMsg("Initialized ALL the things!\n");
+    loaded = true;
 
     return true;
 }
 
-fn unload(_: *sdk.IServerPluginCallbacks) callconv(Method) void {}
+fn unload(_: *sdk.IServerPluginCallbacks) callconv(Method) void {
+    if (!loaded) return;
+    deinit();
+}
 
 fn pause(_: *sdk.IServerPluginCallbacks) callconv(Method) void {}
 

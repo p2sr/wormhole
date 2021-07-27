@@ -1,5 +1,6 @@
 const std = @import("std");
 const sdk = @import("sdk");
+const log = @import("log.zig");
 
 var ifaces_internal = blk: { // This is a workaround for a weird result location bug, will be fixed in stage2
     var i: Ifaces = undefined;
@@ -33,6 +34,8 @@ pub fn init() !void {
         const createInterface = lib.lookup(sdk.CreateInterfaceFn, "CreateInterface") orelse return error.SymbolNotFound;
         const iface = createInterface(desc.id.ptr, null) orelse return error.InterfaceNotFound;
         @field(ifaces_internal, desc.name) = @ptrCast(@TypeOf(@field(ifaces, desc.name)), iface);
+
+        log.devInfo("Initialized interface {s}:{s}\n", .{ desc.module, desc.id });
     }
 }
 

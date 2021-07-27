@@ -1,5 +1,6 @@
 const std = @import("std");
 const sdk = @import("sdk");
+const log = @import("log.zig");
 
 pub fn init() !void {
     var lib = try std.DynLib.open(names.lib);
@@ -10,6 +11,8 @@ pub fn init() !void {
         const name = @field(names, field);
         func.* = lib.lookup(@TypeOf(func.*), name) orelse return error.SymbolNotFound;
     }
+
+    log.devInfo("Initialized tier0\n", .{});
 }
 
 const FmtFn = fn (fmt: [*:0]const u8, ...) callconv(.C) void;
