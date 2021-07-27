@@ -16,3 +16,6 @@ clientSettingsChanged	ClientSettingsChanged	fn (entity: *Edict) void
 clientConnect	ClientConnect	fn (allow: *bool, entity: *Edict, name: [*:0]const u8, addr: [*:0]const u8, reject: [*:0]u8, max_reject_len: c_int) c_int
 clientCommand	ClientCommand	fn (entity: *Edict, args: *const CCommand) c_int
 networkIdValidated	NetworkIDValidated	fn (user_name: [*:0]const u8, network_id: [*:0]const u8) c_int
+onQueryCvarValueFinished	OnQueryCvarValueFinished	fn (cookie: QueryCvarCookie, player: *Edict, status: QueryCvarValueStatus, name: [*:0]const u8, val: [*:0]const u8) void
+onEdictAllocated	OnEdictAllocated	fn (edict: *Edict) void
+onEdictFreed	OnEdictFreed	fn (edict: *const Edict) void

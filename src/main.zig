@@ -122,6 +122,22 @@ fn networkIdValidated(_: *sdk.IServerPluginCallbacks, user_name: [*:0]const u8, 
     return 0;
 }
 
+fn onQueryCvarValueFinished(_: *sdk.IServerPluginCallbacks, cookie: sdk.QueryCvarCookie, player: *sdk.Edict, status: sdk.QueryCvarValueStatus, name: [*:0]const u8, val: [*:0]const u8) callconv(Method) void {
+    _ = cookie;
+    _ = player;
+    _ = status;
+    _ = name;
+    _ = val;
+}
+
+fn onEdictAllocated(_: *sdk.IServerPluginCallbacks, edict: *sdk.Edict) callconv(Method) void {
+    _ = edict;
+}
+
+fn onEdictFreed(_: *sdk.IServerPluginCallbacks, edict: *const sdk.Edict) callconv(Method) void {
+    _ = edict;
+}
+
 // Automatically generates the IServerPluginCallbacks vtable from the
 // functions defined in this file
 var callbacks = sdk.IServerPluginCallbacks{
@@ -136,7 +152,7 @@ var callbacks = sdk.IServerPluginCallbacks{
 
 // The function we expose to the game!
 export fn CreateInterface(name: [*:0]u8, ret: ?*c_int) ?*c_void {
-    if (!std.mem.eql(u8, std.mem.span(name), "ISERVERPLUGINCALLBACKS001")) {
+    if (!std.mem.eql(u8, std.mem.span(name), "ISERVERPLUGINCALLBACKS003")) {
         if (ret) |r| r.* = 0;
         return @ptrCast(*c_void, &callbacks);
     }
