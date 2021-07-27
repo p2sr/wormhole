@@ -13,7 +13,8 @@ fn init() !void {
 
     try tier0.init();
 
-    try interface.init();
+    try interface.init(&gpa.allocator);
+    errdefer interface.deinit();
 
     try mods.init(&gpa.allocator);
     errdefer mods.deinit();
@@ -21,6 +22,7 @@ fn init() !void {
 
 fn deinit() void {
     mods.deinit();
+    interface.deinit();
     std.debug.assert(!gpa.deinit());
 }
 

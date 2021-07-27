@@ -1,0 +1,32 @@
+# TODO these are really fuckin wrong
+connect	Connect	fn () void
+disconnect	Disconnect	fn () void
+queryInterface	QueryInterface	fn () void
+init	Init	fn () void
+shutdown	Shutdown	fn () void
+getDependencies	GetDependencies	fn () void
+getTier	GetTier	fn () void
+reconnect	Reconnect	fn () void
+isSingleton	IsSingleton	fn () void
+
+runFrame	RunFrame	fn () void
+getEmbeddedPanel	GetEmbeddedPanel	fn () Vpanel
+setEmbeddedPanel	SetEmbeddedPanel	fn (panel: Vpanel) void
+pushMakeCurrent	PushMakeCurrent	fn (panel: Vpanel, useInsets: bool) void
+popMakeCurrent	PopMakeCurrent	fn (panel: Vpanel) void
+drawSetColorRaw	DrawSetColor	fn (r: c_int, g: c_int, b: c_int, a: c_int) void
+drawSetColor	DrawSetColor	fn (color: Color) void
+drawFilledRect	DrawFilledRect	fn (x0: c_int, y0: c_int, x1: c_int, y1: c_int) void
+drawFilledRectArray	DrawFilledRectArray	fn (rects: [*]IntRect, num_rects: c_int) void
+drawOutlinedRect	DrawOutlinedRect	fn (x0: c_int, y0: c_int, x1: c_int, y1: c_int) void
+drawLine	DrawLine	fn (x0: c_int, y0: c_int, x1: c_int, y1: c_int) void
+drawPolyLine	DrawPolyLine	fn (px: [*]c_int, py: [*]c_int, num_points: c_int) void
+drawSetApparentDepth	DrawSetApparentDepth	fn (depth: f32) void
+drawClearApparentDepth	DrawClearApparentDepth	fn () void
+drawSetTextFont	DrawSetTextFont	fn (font: HFont) void
+drawSetTextColorRaw	DrawSetTextColor	fn (r: c_int, g: c_int, b: c_int, a: c_int) void
+drawSetTextColor	DrawSetTextColor	fn (color: Color) void
+drawSetTextPos	DrawSetTextPos	fn (x: c_int, y: c_int) void
+drawGetTextPos	DrawGetTextPos	fn (x: *c_int, y: *c_int) void
+drawPrintText	DrawPrintText	fn (text: [*:0]const wchar, text_len: c_int, draw_type: FontDrawType) void
+# TODO incomplete
