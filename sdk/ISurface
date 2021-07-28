@@ -29,4 +29,172 @@ drawSetTextColor	DrawSetTextColor	fn (color: Color) void
 drawSetTextPos	DrawSetTextPos	fn (x: c_int, y: c_int) void
 drawGetTextPos	DrawGetTextPos	fn (x: *c_int, y: *c_int) void
 drawPrintText	DrawPrintText	fn (text: [*:0]const wchar, text_len: c_int, draw_type: FontDrawType) void
-# TODO incomplete
+drawUnicodeChar	DrawUnicodeChar	fn (ch: wchar, draw_type: FontDrawType) void
+
+drawFlushText	DrawFlushText	fn () void
+createHtmlWindow	CreateHTMLWindow	fn (events: *IHTMLEvents, context: Vpanel) *IHTML
+paintHtmlWindow	PaintHTMLWindow	fn (html: *IHTML) void
+deleteHtmlWindow	DeleteHTMLWindow	fn (html: *IHTML) void
+
+drawGetTextureId	DrawGetTextureId	fn (filename: [*:0]const u8) c_int
+drawGetTextureFile	DrawGetTextureFile	fn (id: c_int, filename: [*:0]u8, maxlen: c_int) bool
+drawSetTextureFile	DrawSetTextureFile	fn (id: c_int, filename: [*:0]const u8, maxlen: c_int) void
+drawSetTextureRgba	DrawSetTextureRGBA	fn (id: c_int, rgba: [*]const u8, wide: c_int, tall: c_int) bool
+drawSetTexture	DrawSetTexture	fn (id: c_int) void
+drawGetTextureSize	DrawGetTextureSize	fn (id: c_int, wide: *c_int, tall: *c_int) void
+drawTexturedRect	DrawTexturedRect	fn (x0: c_int, y0: c_int, x1: c_int, y1: c_int) void
+isTextureIdValid	IsTextureIDValid	fn (id: c_int) bool
+
+createNewTextureId	CreateNewTextureID	fn (procedural: bool) c_int
+
+getScreenSize	GetScreenSize	fn (wide: *c_int, tall: *c_int) c_int
+setAsTopMost	SetAsTopMost	fn (panel: Vpanel, state: bool) void
+bringToFront	BringToFront	fn (panel: Vpanel) void
+setForegroundWindow	SetForegroundWindow	fn (panel: Vpanel) void
+setPanelVisible	SetPanelVisible	fn (panel: Vpanel, state: bool) void
+setMinimized	SetMinimized	fn (panel: Vpanel, state: bool) void
+isMinimized	IsMinimized	fn (panel: Vpanel) bool
+flashWindow	FlashWindow	fn (panel: Vpanel, state: bool) void
+setTitle	SetTitle	fn (panel: Vpanel, title: [*:0]const wchar) void
+setAsToolbar	SetAsToolBar	fn (panel: Vpanel, state: bool) void
+
+createPopup	CreatePopup	fn (panel: Vpanel, minimized: bool, show_taskbar_icon: bool, disabled: bool, mouse_input: bool, kb_input: bool) void
+swapBuffers	SwapBuffers	fn (panel: Vpanel) void
+invalidate	Invalidate	fn (panel: Vpanel) void
+setCursor	SetCursor	fn (cursor: HCursor) void
+isCursorVisible	IsCursorVisible	fn () bool
+applyChanges	ApplyChanges	fn () void
+isWithin	IsWithin	fn (x: c_int, y: c_int) bool
+hasFocus	HasFocus	fn () bool
+
+supportsFeature	SupportsFeature	fn (feature: SurfaceFeature) bool
+
+restrictPaintToSinglePanel	RestrictPaintToSinglePanel	fn (panel: Vpanel, force_allow_non_modal_surface: bool) void
+
+setModalPanel	SetModalPanel	fn (panel: Vpanel) void
+getModalPanel	GetModalPanel	fn () Vpanel
+
+unlockCursor	UnlockCursor	fn () void
+lockCursor	LockCursor	fn () void
+setTranslateExtendedKeys	SetTranslateExtendedKeys	fn (state: bool) void
+getTopmostPopup	GetTopmostPopup	fn () Vpanel
+
+setTopLevelFocus	SetTopLevelFocus	fn (panel: Vpanel) void
+
+createFont	CreateFont	fn () HFont
+
+setFontGlyphSet	SetFontGlyphSet	fn (font: HFont, windows_font_name: [*:0]const u8, tall: c_int, weight: c_int, blur: c_int, scanlines: c_int, flags: c_int, range_min: c_int, range_max: c_int) bool
+
+addCustomFontFile	AddCustomFontFile	fn (font_filename: [*:0]const u8) bool
+
+getFontTall	GetFontTall	fn (font: HFont) c_int
+getFontAscent	GetFontAscent	fn (font: HFont, ch: wchar) c_int
+isFontAdditive	IsFontAdditive	fn (font: HFont) bool
+getCharAbcWide	GetCharABCwide	fn (font: HFont, ch: c_int, a: *c_int, b: *c_int, c: *c_int) void
+getCharacterWidth	GetCharacterWidth	fn (font: HFont, ch: c_int) c_int
+getTextSize	GetTextSize	fn (font: HFont, text: [*:0]const wchar, wide: *c_int, tall: *c_int) void
+
+getNotifyPanel	GetNotifyPanel	fn () Vpanel
+setNotifyIcon	SetNotifyIcon	fn (ctx: Vpanel, icon: HTexture, panel_to_receive_message: Vpanel, text: [*:0]const u8) void
+
+playSound	PlaySound	fn (filename: [*:0]const u8) void
+
+getPopupCount	GetPopupCount	fn () c_int
+getPopup	GetPopup	fn (idx: c_int) Vpanel
+shouldPaintChildPanel	ShouldPaintChildPanel	fn (child: Vpanel) bool
+recreateContext	RecreateContext	fn (panel: Vpanel) bool
+addPanel	AddPanel	fn (panel: Vpanel) void
+releasePanel	ReleasePanel	fn (panel: Vpanel) void
+movePopupToFront	MovePopupToFront	fn (panel: Vpanel) void
+movePopupToBack	MovePopupToBack	fn (panel: Vpanel) void
+
+solveTraverse	SolveTraverse	fn (panel: Vpanel, force_apply_scheme_settings: bool) void
+paintTraverse	PaintTraverse	fn (panel: Vpanel) void
+
+getWorkspaceBounds	GetWorkspaceBounds	fn (x: *c_int, y: *c_int, wide: *c_int, tall: *c_int) void
+
+getAbsoluteWindowBounds	GetAbsoluteWindowBounds	fn (x: *c_int, y: *c_int, wide: *c_int, tall: *c_int) void
+
+getProportionalBase	GetProportionalBase	fn (width: *c_int, height: *c_int) void
+
+calculateMouseVisible	CalculateMouseVisible	fn () void
+needKbInput	NeedKBInput	fn () bool
+
+hasCursorPosFunctions	HasCursorPosFunctions	fn () bool
+surfaceGetCursorPos	SurfaceGetCursorPos	fn (x: *c_int, y: *c_int) void
+surfaceSetCursorPos	SurfaceSetCursorPos	fn (x: c_int, y: c_int) void
+
+drawTexturedLine	DrawTexturedLine	fn (a: *const Vertex, b: *const Vertex) void
+drawOutlinedCircle	DrawOutlinedCircle	fn (x: c_int, y: c_int, radius: c_int, segments: c_int) void
+drawTexturedPolyLine	DrawTexturedPolyLine	fn (p: *const Vertex, n: c_int) void
+drawTexturedSubRect	DrawTexturedSubRect	fn (x0: c_int, y0: c_int, x1: c_int, y1: c_int, texs0: f32, text0: f32, texs1: f32, text1: f32) void
+drawTexturedPolygon	DrawTexturedPolygon	fn (n: c_int, vertices: [*]Vertex, clip_vertices: bool) void
+getTitle	GetTitle	fn (panel: Vpanel) [*:0]const wchar
+isCursorLocked	IsCursorLocked	fn () bool
+setWorkspaceInsets	SetWorkspaceInsets	fn (left: c_int, top: c_int, right: c_int, bottom: c_int) void
+
+drawWordBubble	DrawWordBubble	fn (x0: c_int, y0: c_int, x1: c_int, y1: c_int, border_thickness: c_int, background: Color, border: Color, pointer: bool, pointer_x: c_int, pointer_y: c_int, pointer_base_thickness: c_int) void
+
+drawGetUnicodeCharRenderInfo	DrawGetUnicodeCharRenderInfo	fn (ch: wchar, info: *FontCharRenderInfo) bool
+drawRenderCharFromInfo	DrawRenderCharFromInfo	fn (info: *const FontCharRenderInfo) void
+
+drawSetAlphaMultiplier	DrawSetAlphaMultiplier	fn (alpha: f32) void
+drawGetAlphaMultiplier	DrawGetAlphaMultiplier	fn () f32
+
+setAllowHtmlJavascript	SetAllowHTMLJavascript	fn (state: bool) void
+
+onScreenSizeChanged	OnScreenSizeChanged	fn (old_width: c_int, old_height: c_int) void
+
+createCursorFromFile	CreateCursorFromFile	fn (file: [*:0]const u8, path_id: [*:0]const u8) HCursor
+
+drawGetTextureMatInfoFactory	DrawGetTextureMatInfoFactory	fn (id: c_int) *IVguiMatInfo
+
+paintTraverseEx	PaintTraverseEx	fn (panel: Vpanel, paint_popups: bool) void
+
+getZPos	GetZPos	fn () f32
+
+setPanelForInput	SetPanelForInput	fn (panel: Vpanel) void
+drawFilledRectFastFade	DrawFilledRectFastFade	fn (x0: c_int, y0: c_int, x1: c_int, y1: c_int, fade_start_pt: c_int, fade_end_pt: c_int, alpha0: c_uint, alpha1: c_uint, horizontal: bool) void
+drawFilledRectFade	DrawFilledRectFade	fn (x0: c_int, y0: c_int, x1: c_int, y1: c_int, alpha0: c_uint, alpha1: c_uint, horizontal: bool) void
+drawSetTextureRgbaEx	DrawSetTextureRGBAEx	fn (id: c_int, rgba: *[4]u8, wide: c_int, tall: c_int, image_format: ImageFormat) void
+drawSetTextScale	DrawSetTextScale	fn (sx: f32, sy: f32) void
+setBitmapFontGlyphSet	SetBitmapFontGlyphSet	fn (font: HFont, windows_font_name: [*:0]const u8, scalex: f32, scaley: f32, flags: c_int) void
+addBitmapFontFile	AddBitmapFontFile	fn (font_filename: [*:0]const u8) bool
+setBitmapFontName	SetBitmapFontName	fn (name: [*:0]const u8, font_filename: [*:0]const u8) void
+getBitmapFontName	GetBitmapFontName	fn (name: [*:0]const u8) [*:0]const u8
+clearTemporaryFontCache	ClearTemporaryFontCache	fn () void
+
+getIconImageForFullPath	GetIconImageForFullPath	fn (full_path: [*:0]const u8) *IImage
+drawUnicodeString	DrawUnicodeString	fn (string: [*:0]const wchar, draw_type: FontDrawType) void
+precacheFontCharacters	PrecacheFontCharacters	fn (font: HFont, characters: [*:0]const wchar) void
+
+getFontName	GetFontName	fn (font: HFont) [*:0]const u8
+
+forceScreenSizeOverride	ForceScreenSizeOverride	fn (state: bool, wide: c_int, tall: c_int) bool
+forceScreenPosOffset	ForceScreenPosOffset	fn (state: bool, x: c_int, y: c_int) bool
+offsetAbsPos	OffsetAbsPos	fn (x: *c_int, y: *c_int) void
+
+setAbsPosForContext	SetAbsPosForContext	fn (id: c_int, x: c_int, y: c_int) void
+getAbsPosForContext	GetAbsPosForContext	fn (id: c_int, x: *c_int, y: *c_int) void
+
+resetFontCaches	ResetFontCaches	fn () void
+
+isScreenSizeOverrideActive	IsScreenSizeOverrideActive	fn () bool
+isScreenPosOverrideActive	IsScreenPosOverrideActive	fn () bool
+
+destroyTextureId	DestroyTextureID	fn (id: c_int) void
+
+getTextureNumFrames	GetTextureNumFrames	fn (id: c_int) c_int
+drawSetTextureFrame	DrawSetTextureFrame	fn (id: c_int, frame: c_int, frame_cache: *c_uint) void
+
+getClipRect	GetClipRect	fn (x0: *c_int, y0: *c_int, x1: *c_int, y1: *c_int) void
+setClipRect	SetClipRect	fn (x0: c_int, y0: c_int, x1: c_int, y1: c_int) void
+
+drawTexturedRectEx	DrawTexturedRectEx	fn (draw_params: DrawTexturedRectParms) void
+
+getKernedCharWidth	GetKernedCharWidth	fn (font: HFont, ch: wchar, before: wchar, after: wchar, wide: *f32, a: *f32, c: *f32) void
+
+drawUpdateRegionTextureRgba	DrawUpdateRegionTextureRGBA	fn (texture_id: c_int, x: c_int, y: c_int, data: [*]const u8, wide: c_int, tall: c_int, image_format: ImageFormat) void
+bhtmlWindowNeedsPaint	BHTMLWindowNeedsPaint	fn (html: *IHTML) bool
+
+drawSetTextureRgbaLinear	DrawSetTextureRGBALinear	fn (id: c_int, rgba: [*]const u8, wide: c_int, tall: c_int) void

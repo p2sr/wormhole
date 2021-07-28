@@ -25,7 +25,7 @@ pub const wchar = switch (@import("std").builtin.os.tag) {
     .windows => u16,
     else => u32,
 };
-pub const HFont = i32;
+pub const HFont = u32;
 pub const Vpanel = u32;
 pub const InputContextHandle = ?*opaque {};
 pub const VGuiPanel = enum(c_int) {
@@ -85,4 +85,47 @@ pub const QueryCvarValueStatus = enum(c_int) {
     cvar_not_found,
     not_a_cvar,
     cvar_protected,
+};
+pub const SurfaceFeature = enum(c_int) {
+    antialiased_fonts = 1,
+    dropshadow_fonts = 2,
+    escape_key = 3,
+    opening_new_html_windows = 4,
+    frame_minimize_maximize = 5,
+    outline_fonts = 6,
+    direct_hwnd_render = 7,
+};
+pub const IHTMLEvents = opaque {};
+pub const IHTML = opaque {};
+pub const HCursor = u32;
+pub const HTexture = u32;
+pub const Vertex = extern struct {
+    position: Vector2D,
+    tex_coord: Vector2D,
+};
+pub const Vector2D = extern struct {
+    x: f32,
+    y: f32,
+};
+pub const FontCharRenderInfo = opaque {};
+pub const IVguiMatInfo = opaque {};
+pub const ImageFormat = c_int; // TODO: this is really an enum but it's fucking huge
+pub const IImage = opaque {};
+pub const DrawTexturedRectParms = extern struct {
+    x0: c_int,
+    y0: c_int,
+    x1: c_int,
+    y1: c_int,
+
+    s0: f32,
+    t0: f32,
+    s1: f32,
+    t1: f32,
+
+    alpha_ul: u8,
+    alpha_ur: u8,
+    alpha_lr: u8,
+    alpha_ll: u8,
+
+    angle: f32,
 };
