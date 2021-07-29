@@ -39,6 +39,13 @@ const names = switch (std.builtin.os.tag) {
         .devMsg = "_Z6DevMsgPKcz",
         .devWarning = "_Z10DevWarningPKcz",
     },
-    .macos => @compileError("macOS not yet supported"),
+    .macos => .{
+        .lib = "libtier0.dylib",
+        .msg = "Msg",
+        .warning = "Warning",
+        .colorMsg = "_Z11ConColorMsgRK5ColorPKcz",
+        .devMsg = "_Z6DevMsgPKcz",
+        .devWarning = "_Z10DevWarningPKcz",
+    },
     else => @compileError("Unsupported OS"),
 };
