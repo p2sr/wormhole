@@ -7,7 +7,6 @@ shutdown	Shutdown	fn () void
 getDependencies	GetDependencies	fn () void
 getTier	GetTier	fn () void
 reconnect	Reconnect	fn () void
-isSingleton	IsSingleton	fn () void
 
 runFrame	RunFrame	fn () void
 getEmbeddedPanel	GetEmbeddedPanel	fn () Vpanel
@@ -28,7 +27,7 @@ drawSetTextColorRaw	DrawSetTextColor	fn (r: c_int, g: c_int, b: c_int, a: c_int)
 drawSetTextColor	DrawSetTextColor	fn (color: Color) void
 drawSetTextPos	DrawSetTextPos	fn (x: c_int, y: c_int) void
 drawGetTextPos	DrawGetTextPos	fn (x: *c_int, y: *c_int) void
-drawPrintText	DrawPrintText	fn (text: [*:0]const wchar, text_len: c_int, draw_type: FontDrawType) void
+drawPrintText	DrawPrintText	fn (text: [*]const wchar, text_len: c_int, draw_type: FontDrawType) void
 drawUnicodeChar	DrawUnicodeChar	fn (ch: wchar, draw_type: FontDrawType) void
 
 drawFlushText	DrawFlushText	fn () void
@@ -110,6 +109,8 @@ movePopupToBack	MovePopupToBack	fn (panel: Vpanel) void
 
 solveTraverse	SolveTraverse	fn (panel: Vpanel, force_apply_scheme_settings: bool) void
 paintTraverse	PaintTraverse	fn (panel: Vpanel) void
+
+enableMouseCapture	EnableMouseCapture	fn (panel: Vpanel, state: bool) void
 
 getWorkspaceBounds	GetWorkspaceBounds	fn (x: *c_int, y: *c_int, wide: *c_int, tall: *c_int) void
 

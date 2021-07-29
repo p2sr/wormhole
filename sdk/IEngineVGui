@@ -13,7 +13,9 @@ keyEvent	Key_Event	fn (event: *const InputEvent) bool
 backCompatPaint	BackwardCompatibility_Paint	fn () void
 updateButtonState	UpdateButtonState	fn (event: *const InputEvent) void
 postInit	PostInit	fn () void
-paint	Paint	fn (mode: PaintMode) void
+# THIS PARAMETER SHOULD BE OF TYPE PaintMode
+# But that's currently not passable over C ABI
+paint	Paint	fn (mode: c_int) void
 
 hideGameUi	HideGameUI	fn () bool
 

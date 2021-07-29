@@ -42,9 +42,9 @@ pub const VGuiPanel = enum(c_int) {
     steam_overlay,
 };
 pub const InputEvent = opaque {};
-pub const PaintMode = enum(c_int) {
-    ui_panels = 1 << 0,
-    in_game_panels = 1 << 1,
+pub const PaintMode = packed struct {
+    ui_panels: bool,
+    in_game_panels: bool,
 };
 pub const LevelLoadingProgress = enum(c_int) {
     none,

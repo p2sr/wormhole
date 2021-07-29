@@ -1,6 +1,7 @@
 const std = @import("std");
 const sdk = @import("sdk");
 const log = @import("log.zig");
+const ifaces = @import("interface.zig").ifaces;
 const orig = @import("interface.zig").orig;
 
 var count: u8 = 0;
@@ -10,13 +11,58 @@ const Method = switch (std.builtin.os.tag) {
     else => std.builtin.CallingConvention.C,
 };
 
+fn readFuncPtr(comptime T: type, func: anytype, offset: usize) T {
+    const raw = @ptrToInt(func);
+    const diff = @intToPtr(*align(1) const usize, raw + offset).*;
+    const addr = (raw + offset + @sizeOf(usize)) +% diff;
+    return @intToPtr(T, addr);
+}
+
 IEngineVGui: struct {
-    pub fn paint(self: *sdk.IEngineVGui, mode: sdk.PaintMode) callconv(Method) void {
-        var ret = orig.IEngineVGui.paint(self, mode);
-        count +%= 1;
-        if (count == 0) {
-            log.info("Paint!\n", .{});
+    pub fn paint(self: *sdk.IEngineVGui, _mode: c_int) callconv(Method) void {
+        var ret = orig.IEngineVGui.paint(self, _mode);
+
+        const mode = @bitCast(sdk.PaintMode, @intCast(u2, _mode));
+
+        // TODO: proper system for getting non-exposed shit, cuz this is
+        // gross
+        const offsets = switch (std.builtin.os.tag) {
+            .linux => .{
+                .startDrawing = 85,
+                .finishDrawing = 205,
+            },
+            .windows => .{
+                .startDrawing = 22,
+                .finishDrawing = 117,
+            },
+            .macos => .{
+                .startDrawing = 59,
+                .finishDrawing = 217,
+            },
+            else => @compileError("OS not supported"),
+        };
+        const startDrawing = readFuncPtr(fn (*sdk.ISurface) callconv(Method) void, orig.ISurface.precacheFontCharacters, offsets.startDrawing);
+        const finishDrawing = readFuncPtr(fn (*sdk.ISurface) callconv(Method) void, orig.ISurface.precacheFontCharacters, offsets.finishDrawing);
+
+        startDrawing(ifaces.ISurface);
+
+        if (mode.ui_panels) {
+            const str = "Hello from Wormhole!";
+
+            // Seriously Valve, what the fuck is with the wchar strings?
+            var wstr: [str.len]sdk.wchar = undefined;
+            for (str) |c, i| {
+                wstr[i] = @intCast(sdk.wchar, c);
+            }
+
+            ifaces.ISurface.drawSetTextPos(100, 100);
+            ifaces.ISurface.drawSetTextColor(sdk.Color{ .r = 0xCC, .g = 0x22, .b = 0xFF });
+            ifaces.ISurface.drawSetTextFont(13);
+            ifaces.ISurface.drawPrintText(&wstr, wstr.len, sdk.FontDrawType.default);
         }
+
+        finishDrawing(ifaces.ISurface);
+
         return ret;
     }
 },
