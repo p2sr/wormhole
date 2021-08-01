@@ -45,14 +45,15 @@ const ClassGenStep = struct {
         const self = @fieldParentPtr(ClassGenStep, "step", step);
 
         var gen = try ClassGenerator.init(self.b.allocator);
-        var walker = try std.fs.walkPath(self.b.allocator, self.dir);
-        while (try walker.next()) |entry| {
+        const dir = try std.fs.cwd().openDir(self.dir, .{ .iterate = true });
+        var it = dir.iterate();
+        while (try it.next()) |entry| {
             if (entry.kind != .File) continue;
-            if (std.mem.startsWith(u8, entry.basename, ".")) continue;
-            if (std.mem.endsWith(u8, entry.basename, ".zig")) {
+            if (std.mem.startsWith(u8, entry.name, ".")) continue;
+            if (std.mem.endsWith(u8, entry.name, ".zig")) {
                 try gen.zigImport("classgen_internal");
             } else {
-                gen.classFromFilename(entry.path) catch |err| switch (err) {
+                gen.classFromFilename(dir, entry.name) catch |err| switch (err) {
                     error.InvalidFormat => std.os.exit(1),
                     else => |e| return e,
                 };
@@ -107,8 +108,8 @@ const ClassGenerator = struct {
         try self.print("pub usingnamespace @import(\"{}\");\n", .{std.zig.fmtEscapes(filename)});
     }
 
-    pub fn classFromFilename(self: *ClassGenerator, filename: []const u8) !void {
-        const f = try std.fs.cwd().openFile(filename, .{});
+    pub fn classFromFilename(self: *ClassGenerator, dir: std.fs.Dir, filename: []const u8) !void {
+        const f = try dir.openFile(filename, .{});
         defer f.close();
 
         const class_name = std.fs.path.basename(filename);
