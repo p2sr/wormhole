@@ -22,7 +22,7 @@ pub var colorMsg: fn (color: *const sdk.Color, fmt: [*:0]const u8, ...) callconv
 pub var devMsg: FmtFn = undefined;
 pub var devWarning: FmtFn = undefined;
 
-const names = switch (std.builtin.os.tag) {
+const names = switch (@import("builtin").os.tag) {
     .windows => .{
         .lib = "tier0.dll",
         .msg = "Msg",

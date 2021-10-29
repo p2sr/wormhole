@@ -9,8 +9,8 @@ getTier	GetTier	fn () void
 reconnect	Reconnect	fn () void
 isSingleton	IsSingleton	fn () void
 
-allocDllIdentifier	AllocateDLLIdentifier	fn () CvarDLLIdentifier
-registerConCommand	RegisterConCommand	fn (*ConCommandBase) void
-unregisterConCommand	UnreigsterConCommand	fn (*ConCommandBase) void
-unregisterConCommands	UnregisterConCommands	fn (CvarDLLIdentifier) void
+allocDllIdentifier	AllocateDLLIdentifier	fn () sdk.CvarDLLIdentifier
+registerConCommand	RegisterConCommand	fn (*sdk.ConCommandBase) void
+unregisterConCommand	UnreigsterConCommand	fn (*sdk.ConCommandBase) void
+unregisterConCommands	UnregisterConCommands	fn (sdk.CvarDLLIdentifier) void
 getCommandLineValue	GetCommandLineValue	fn (var_name: [*:0]const u8) [*:0]const u8

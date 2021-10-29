@@ -6,7 +6,7 @@ const orig = @import("interface.zig").orig;
 
 var count: u8 = 0;
 
-const Method = switch (std.builtin.os.tag) {
+const Method = switch (@import("builtin").os.tag) {
     .windows => std.builtin.CallingConvention.Thiscall,
     else => std.builtin.CallingConvention.C,
 };
@@ -26,7 +26,7 @@ IEngineVGui: struct {
 
         // TODO: proper system for getting non-exposed shit, cuz this is
         // gross
-        const offsets = switch (std.builtin.os.tag) {
+        const offsets = switch (@import("builtin").os.tag) {
             .linux => .{
                 .startDrawing = 85,
                 .finishDrawing = 205,

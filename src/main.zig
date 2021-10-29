@@ -28,7 +28,7 @@ fn deinit() void {
 
 // Plugin callbacks below
 
-const Method = switch (std.builtin.os.tag) {
+const Method = switch (@import("builtin").os.tag) {
     .windows => std.builtin.CallingConvention.Thiscall,
     else => std.builtin.CallingConvention.C,
 };

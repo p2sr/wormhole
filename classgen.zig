@@ -79,6 +79,7 @@ const ClassGenerator = struct {
         errdefer self.deinit();
         try self.write(
             \\const std = @import("std");
+            \\const sdk = @This();
         );
         try self.sep();
         return self;
@@ -118,7 +119,7 @@ const ClassGenerator = struct {
         var line_no: u32 = 0;
         while (try f.reader().readUntilDelimiterOrEofAlloc(self.allocator, '\n', 1 << 20)) |line| {
             line_no += 1;
-            var toks = std.mem.split(line, "\t");
+            var toks = std.mem.split(u8, line, "\t");
 
             const zig_name = toks.next() orelse continue;
             if (zig_name.len == 0) continue;
@@ -206,7 +207,7 @@ const ClassGenerator = struct {
         try self.sep();
 
         try self.write(
-            \\pub const Vtable = switch (std.builtin.os.tag) {
+            \\pub const Vtable = switch (@import("builtin").os.tag) {
             \\    .windows => extern struct {
             \\
         );
@@ -386,7 +387,7 @@ const TypeDesc = union(enum) {
             .allocator = allocator,
             .toks = std.zig.Tokenizer.init(str),
         };
-        return parser.parse(parser.toks.next()) catch |err| switch (err) {
+        return parser.parse() catch |err| switch (err) {
             error.WrongToken => null,
             else => |e| return e,
         };
@@ -395,22 +396,63 @@ const TypeDesc = union(enum) {
     const Parser = struct {
         allocator: *std.mem.Allocator,
         toks: std.zig.Tokenizer,
+        peeked: ?std.zig.Token = null,
+        peeked2: ?std.zig.Token = null,
 
-        fn parse(self: *Parser, tok: std.zig.Token) !TypeDesc {
-            return switch (tok.tag) {
+        fn nextTok(self: *Parser) std.zig.Token {
+            const t = self.peekTok();
+            self.peeked = self.peeked2;
+            self.peeked2 = null;
+            return t;
+        }
+
+        fn peekTok(self: *Parser) std.zig.Token {
+            if (self.peeked == null) {
+                self.peeked = self.toks.next();
+            }
+            return self.peeked.?;
+        }
+
+        fn peekTok2(self: *Parser) std.zig.Token {
+            _ = self.peekTok();
+            if (self.peeked2 == null) {
+                self.peeked2 = self.toks.next();
+            }
+            return self.peeked2.?;
+        }
+
+        fn parse(self: *Parser) !TypeDesc {
+            if (self.peekTok().tag == .identifier) return self.parseNamedType();
+
+            return switch (self.nextTok().tag) {
                 .asterisk => self.parsePointer(.one, null),
                 .l_bracket => self.parseArray(),
                 .keyword_fn => self.parseFn(),
-                .identifier => TypeDesc{
-                    .named = self.toks.buffer[tok.loc.start..tok.loc.end],
-                },
                 else => error.WrongToken, // TODO: better errors
             };
         }
-        fn parseAlloc(self: *Parser, tok: std.zig.Token) !*TypeDesc {
+        fn parseAlloc(self: *Parser) !*TypeDesc {
             const desc = try self.allocator.create(TypeDesc);
-            desc.* = try self.parse(tok);
+            desc.* = try self.parse();
             return desc;
+        }
+
+        fn parseNamedType(self: *Parser) !TypeDesc {
+            var name = std.ArrayList(u8).init(self.allocator);
+
+            var tok = self.nextTok();
+            if (tok.tag != .identifier) return error.WrongToken;
+            try name.appendSlice(self.toks.buffer[tok.loc.start..tok.loc.end]);
+
+            while (self.peekTok().tag == .period) {
+                _ = self.nextTok();
+                tok = self.nextTok();
+                if (tok.tag != .identifier) return error.WrongToken;
+                try name.append('.');
+                try name.appendSlice(self.toks.buffer[tok.loc.start..tok.loc.end]);
+            }
+
+            return TypeDesc{ .named = name.toOwnedSlice() };
         }
 
         fn parsePointer(self: *Parser, size: Pointer.Size, sentinel: ?[]const u8) !TypeDesc {
@@ -421,18 +463,17 @@ const TypeDesc = union(enum) {
                 .sentinel = sentinel,
             };
 
-            var tok = self.toks.next();
-            if (tok.tag == .keyword_const) {
+            if (self.peekTok().tag == .keyword_const) {
+                _ = self.nextTok();
                 ptr.is_const = true;
-                tok = self.toks.next();
             }
 
-            ptr.child = try self.parseAlloc(tok);
+            ptr.child = try self.parseAlloc();
             return TypeDesc{ .ptr = ptr };
         }
 
         fn parseArray(self: *Parser) !TypeDesc {
-            const tok = self.toks.next();
+            const tok = self.nextTok();
             return switch (tok.tag) {
                 .integer_literal => blk: {
                     const len = std.fmt.parseUnsigned(
@@ -444,7 +485,7 @@ const TypeDesc = union(enum) {
 
                     break :blk TypeDesc{ .array = .{
                         .len = len,
-                        .child = try self.parseAlloc(self.toks.next()),
+                        .child = try self.parseAlloc(),
                         .sentinel = sentinel,
                     } };
                 },
@@ -456,12 +497,13 @@ const TypeDesc = union(enum) {
         }
 
         fn parseSentinel(self: *Parser) !?[]const u8 {
-            var tok = self.toks.next();
-            if (tok.tag != .colon) return null;
+            var tok = self.nextTok();
+            if (tok.tag == .r_bracket) return null;
+            if (tok.tag != .colon) return error.WrongToken;
 
             const start = tok.loc.end;
             var end = start;
-            while (tok.tag != .r_bracket) : (tok = self.toks.next()) {
+            while (tok.tag != .r_bracket) : (tok = self.nextTok()) {
                 if (tok.tag == .eof) return error.WrongToken;
                 end = tok.loc.end;
             }
@@ -474,55 +516,44 @@ const TypeDesc = union(enum) {
         }
 
         fn parseFn(self: *Parser) !TypeDesc {
-            try self.expect(.l_paren);
+            if (self.nextTok().tag != .l_paren) return error.WrongToken;
 
             var args = std.ArrayList(TypeDesc).init(self.allocator);
-            var tok = self.toks.next();
             var variadic = false;
-            while (tok.tag != .r_paren) : (tok = self.toks.next()) {
+            while (self.peekTok().tag != .r_paren) {
                 if (variadic) {
                     return error.WrongToken;
                 }
 
-                var sep: ?std.zig.Token = null;
-                switch (tok.tag) {
-                    .ellipsis3 => variadic = true,
+                switch (self.peekTok().tag) {
+                    .ellipsis3 => {
+                        _ = self.nextTok();
+                        variadic = true;
+                    },
                     .identifier => {
                         // Might be a name or a type
-                        const tok2 = self.toks.next();
-                        switch (tok2.tag) {
-                            .colon => { // Name
-                                try args.append(try self.parse(self.toks.next()));
-                            },
-                            .comma, .r_paren => { // Type
-                                sep = tok2;
-                                try args.append(TypeDesc{
-                                    .named = self.toks.buffer[tok.loc.start..tok.loc.end],
-                                });
-                            },
-                            else => return error.WrongToken,
+                        if (self.peekTok2().tag == .colon) {
+                            _ = self.nextTok();
+                            _ = self.nextTok();
                         }
+                        try args.append(try self.parse());
                     },
-                    else => try args.append(try self.parse(tok)),
+                    else => try args.append(try self.parse()),
                 }
 
-                switch ((sep orelse self.toks.next()).tag) {
-                    .comma => {},
+                switch (self.peekTok().tag) {
+                    .comma => _ = self.nextTok(),
                     .r_paren => break,
                     else => return error.WrongToken,
                 }
             }
+            _ = self.nextTok();
 
             return TypeDesc{ .func = .{
                 .args = args.toOwnedSlice(),
-                .return_type = try self.parseAlloc(self.toks.next()),
+                .return_type = try self.parseAlloc(),
                 .variadic = variadic,
             } };
-        }
-
-        fn expect(self: *Parser, tag: std.zig.Token.Tag) !void {
-            const tok = self.toks.next();
-            if (tok.tag != tag) return error.WrongToken;
         }
     };
 };

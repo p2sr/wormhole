@@ -1,21 +1,21 @@
-load	Load	fn (interface_factory: CreateInterfaceFn, game_server_factory: CreateInterfaceFn) bool
+load	Load	fn (interface_factory: sdk.CreateInterfaceFn, game_server_factory: sdk.CreateInterfaceFn) bool
 unload	Unload	fn () void
 pause	Pause	fn () void
 unpause	UnPause	fn () void
 getPluginDescription	GetPluginDescription	fn () [*:0]const u8
 levelInit	LevelInit	fn (map_name: [*:0]const u8) void
-serverActivate	ServerActivate	fn (edict_list: [*]Edict, edict_count: c_int, client_max: c_int) void
+serverActivate	ServerActivate	fn (edict_list: [*]sdk.Edict, edict_count: c_int, client_max: c_int) void
 gameFrame	GameFrame	fn (simulating: bool) void
 levelShutdown	LevelShutdown	fn () void
-clientActive	ClientActive	fn (entity: *Edict) void
-clientFullyConnect	ClientFullyConnect	fn (entity: *Edict) void
-clientDisconnect	ClientDisconnect	fn (entity: *Edict) void
-clientPutInServer	ClientPutInServer	fn (entity: *Edict, player_name: [*:0]const u8) void
+clientActive	ClientActive	fn (entity: *sdk.Edict) void
+clientFullyConnect	ClientFullyConnect	fn (entity: *sdk.Edict) void
+clientDisconnect	ClientDisconnect	fn (entity: *sdk.Edict) void
+clientPutInServer	ClientPutInServer	fn (entity: *sdk.Edict, player_name: [*:0]const u8) void
 setCommandClient	SetCommandClient	fn (index: c_int) void
-clientSettingsChanged	ClientSettingsChanged	fn (entity: *Edict) void
-clientConnect	ClientConnect	fn (allow: *bool, entity: *Edict, name: [*:0]const u8, addr: [*:0]const u8, reject: [*:0]u8, max_reject_len: c_int) c_int
-clientCommand	ClientCommand	fn (entity: *Edict, args: *const CCommand) c_int
+clientSettingsChanged	ClientSettingsChanged	fn (entity: *sdk.Edict) void
+clientConnect	ClientConnect	fn (allow: *bool, entity: *sdk.Edict, name: [*:0]const u8, addr: [*:0]const u8, reject: [*:0]u8, max_reject_len: c_int) c_int
+clientCommand	ClientCommand	fn (entity: *sdk.Edict, args: *const sdk.CCommand) c_int
 networkIdValidated	NetworkIDValidated	fn (user_name: [*:0]const u8, network_id: [*:0]const u8) c_int
-onQueryCvarValueFinished	OnQueryCvarValueFinished	fn (cookie: QueryCvarCookie, player: *Edict, status: QueryCvarValueStatus, name: [*:0]const u8, val: [*:0]const u8) void
-onEdictAllocated	OnEdictAllocated	fn (edict: *Edict) void
-onEdictFreed	OnEdictFreed	fn (edict: *const Edict) void
+onQueryCvarValueFinished	OnQueryCvarValueFinished	fn (cookie: sdk.QueryCvarCookie, player: *sdk.Edict, status: sdk.QueryCvarValueStatus, name: [*:0]const u8, val: [*:0]const u8) void
+onEdictAllocated	OnEdictAllocated	fn (edict: *sdk.Edict) void
+onEdictFreed	OnEdictFreed	fn (edict: *const sdk.Edict) void

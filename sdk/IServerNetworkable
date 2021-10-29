@@ -1,9 +1,9 @@
-getEntityHandle	GetEntityHandle	fn () *IHandleEntity
-getServerClass	GetServerClass	fn () *ServerClass
-getEdict	GetEdict	fn () *Edict
+getEntityHandle	GetEntityHandle	fn () *sdk.IHandleEntity
+getServerClass	GetServerClass	fn () *sdk.ServerClass
+getEdict	GetEdict	fn () *sdk.Edict
 getClassName	GetClassName	fn () [*:0]u8
 release	Release	fn () void
 areaNum	AreaNum	fn () c_int
-getBaseNetworkable	GetBaseNetworkable	fn () *CBaseNetworkable
-getBaseEntity	GetBaseEntity	fn () *CBaseEntity
-getPvsInfo	GetPVSInfo	fn () *PVSInfo
+getBaseNetworkable	GetBaseNetworkable	fn () *sdk.CBaseNetworkable
+getBaseEntity	GetBaseEntity	fn () *sdk.CBaseEntity
+getPvsInfo	GetPVSInfo	fn () *sdk.PVSInfo

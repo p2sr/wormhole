@@ -34,14 +34,14 @@ pub fn init(allocator1: *std.mem.Allocator) !void {
 
     inline for (comptime getDescs()) |desc| {
         const library = if (std.mem.eql(u8, desc.module, "tier1"))
-            switch (std.builtin.os.tag) {
+            switch (@import("builtin").os.tag) {
                 .windows => "vstdlib.dll",
                 .linux => "libvstdlib.so",
                 .macos => "libvstdlib.dylib",
                 else => @compileError("Unsupported OS"),
             }
         else
-            desc.module ++ switch (std.builtin.os.tag) {
+            desc.module ++ switch (@import("builtin").os.tag) {
                 .windows => ".dll",
                 .linux => ".so",
                 .macos => ".dylib",

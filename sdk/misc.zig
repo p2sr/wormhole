@@ -21,7 +21,7 @@ pub const FontDrawType = enum(c_int) {
     nonadditive,
     additive,
 };
-pub const wchar = switch (@import("std").builtin.os.tag) {
+pub const wchar = switch (@import("builtin").os.tag) {
     .windows => u16,
     else => u32,
 };

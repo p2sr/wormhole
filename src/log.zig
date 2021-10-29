@@ -15,7 +15,7 @@ fn writeFn(ctx: Context, bytes: []const u8) error{}!usize {
     return bytes.len;
 }
 
-fn mkWriter(ctx: Context) std.io.Writer(Context, void, writeInfo) {
+fn mkWriter(ctx: Context) std.io.Writer(Context, void, writeFn) {
     return std.io.Writer(Context, void, writeFn){ .context = ctx };
 }
 
