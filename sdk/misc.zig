@@ -129,3 +129,20 @@ pub const DrawTexturedRectParms = extern struct {
 
     angle: f32,
 };
+pub const Vector3D = extern struct {
+    x: f32,
+    y: f32,
+    z: f32,
+};
+pub const Model = opaque {}; // model_t
+pub const SurfInfo = struct {
+    verts: [16]Vector3D,
+    nverts: c_ulong,
+    plane: VPlane,
+    engine_data: *c_void,
+};
+pub const VPlane = struct {
+    normal: Vector3D,
+    dist: f32,
+};
+pub const IMaterial = opaque {};

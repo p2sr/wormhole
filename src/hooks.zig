@@ -47,18 +47,19 @@ IEngineVGui: struct {
         startDrawing(ifaces.ISurface);
 
         if (mode.ui_panels) {
-            const str = "Hello from Wormhole!";
+            @import("root").test_hud.draw(0);
+            //const str = "Hello from Wormhole!";
 
             // Seriously Valve, what the fuck is with the wchar strings?
-            var wstr: [str.len]sdk.wchar = undefined;
-            for (str) |c, i| {
-                wstr[i] = @intCast(sdk.wchar, c);
-            }
+            //var wstr: [str.len]sdk.wchar = undefined;
+            //for (str) |c, i| {
+            //    wstr[i] = @intCast(sdk.wchar, c);
+            //}
 
-            ifaces.ISurface.drawSetTextPos(100, 100);
-            ifaces.ISurface.drawSetTextColor(sdk.Color{ .r = 0xCC, .g = 0x22, .b = 0xFF });
-            ifaces.ISurface.drawSetTextFont(13);
-            ifaces.ISurface.drawPrintText(&wstr, wstr.len, sdk.FontDrawType.default);
+            //ifaces.ISurface.drawSetTextPos(100, 100);
+            //ifaces.ISurface.drawSetTextColor(sdk.Color{ .r = 0xCC, .g = 0x22, .b = 0xFF });
+            //ifaces.ISurface.drawSetTextFont(13);
+            //ifaces.ISurface.drawPrintText(&wstr, wstr.len, sdk.FontDrawType.default);
         }
 
         finishDrawing(ifaces.ISurface);

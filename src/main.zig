@@ -4,17 +4,49 @@ const tier0 = @import("tier0.zig");
 const interface = @import("interface.zig");
 const mods = @import("mods.zig");
 const log = @import("log.zig");
+const surface = @import("surface.zig");
 
 var gpa: std.heap.GeneralPurposeAllocator(.{}) = undefined;
+
+const hud = @import("hud.zig");
+const thud = @import("thud.zig");
+pub var test_hud: hud.Hud(thud.THud) = undefined;
 
 fn init() !void {
     gpa = .{};
     errdefer std.debug.assert(!gpa.deinit());
 
+    {
+        var arena = std.heap.ArenaAllocator.init(&gpa.allocator);
+        var s = std.io.fixedBufferStream("testing {.color:FF0000}red{.color:reset} thud");
+        var p = thud.parser(arena, s.reader());
+        const parts = try p.parse();
+        var lines = try arena.allocator.alloc(thud.THud.Line, 1);
+        lines[0] = .{
+            .color = .{ .r = 255, .g = 255, .b = 255, .a = 255 },
+            .parts = parts,
+        };
+        test_hud = .{
+            .ctx = .{
+                .arena = arena,
+                .font = {},
+                .spacing = 5,
+                .padding = 20,
+                .lines = lines,
+            },
+            .screen_anchor = std.meta.Vector(2, f32){ 0.5, 0.5 },
+            .hud_anchor = std.meta.Vector(2, f32){ 0.5, 0.5 },
+            .pix_off = std.meta.Vector(2, i32){ 0, 0 },
+            .scale = 1.0,
+        };
+    }
+
     try tier0.init();
 
     try interface.init(&gpa.allocator);
     errdefer interface.deinit();
+
+    surface.init(&gpa.allocator);
 
     try mods.init(&gpa.allocator);
     errdefer mods.deinit();
@@ -23,6 +55,7 @@ fn init() !void {
 fn deinit() void {
     mods.deinit();
     interface.deinit();
+    test_hud.ctx.arena.deinit();
     std.debug.assert(!gpa.deinit());
 }
 
