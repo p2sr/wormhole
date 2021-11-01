@@ -1,6 +1,7 @@
 const std = @import("std");
 const sdk = @import("sdk");
 const surface = @import("surface.zig");
+const mods = @import("mods.zig");
 
 pub const THud = struct {
     pub const Part = union(enum) {
@@ -8,7 +9,7 @@ pub const THud = struct {
         component: struct {
             mod: []u8,
             name: []u8,
-            format: []u8,
+            format: [:0]u8,
         },
         color: ?sdk.Color,
         align_: ?u32,
@@ -25,9 +26,8 @@ pub const THud = struct {
     padding: u32,
     lines: []Line,
 
-    fn evalLine(self: THud, slot: u8, line: Line, draw_pos: ?std.meta.Vector(2, i32)) u32 {
+    fn evalLine(self: *THud, slot: u8, line: Line, draw_pos: ?std.meta.Vector(2, i32)) !u32 {
         _ = self;
-        _ = slot;
 
         var width: u32 = 0;
         var align_base: u32 = 0;
@@ -38,8 +38,25 @@ pub const THud = struct {
                 if (draw_pos) |pos| surface.drawText(pos + std.meta.Vector(2, i32){ @intCast(i32, width), 0 }, str);
                 width += surface.getTextLength(str);
             },
-            .component => {
-                // TODO
+            .component => |info| {
+                if (mods.getMod(info.mod)) |mod| {
+                    if (mod.thud_components.get(info.name)) |comp| {
+                        var buf: [64]u8 = undefined;
+                        const size = comp.cbk(slot, info.format, &buf, buf.len);
+                        var str: []u8 = undefined;
+                        if (size <= 64) {
+                            str = buf[0..size];
+                        } else {
+                            str = try self.arena.allocator.alloc(u8, size);
+                            _ = comp.cbk(slot, info.format, str.ptr, buf.len);
+                        }
+
+                        if (draw_pos) |pos| surface.drawText(pos + std.meta.Vector(2, i32){ @intCast(i32, width), 0 }, str);
+                        width += surface.getTextLength(str);
+
+                        if (size > 64) self.arena.allocator.free(str);
+                    }
+                }
             },
             .color => |c| if (draw_pos != null) surface.setColor(c orelse line.color),
             .align_ => |x_opt| {
@@ -54,7 +71,7 @@ pub const THud = struct {
         return width;
     }
 
-    pub fn calcSize(self: THud, slot: u8) std.meta.Vector(2, u32) {
+    pub fn calcSize(self: *THud, slot: u8) std.meta.Vector(2, u32) {
         var width: u32 = 0;
         var height: u32 = 0;
 
@@ -62,7 +79,7 @@ pub const THud = struct {
             if (i > 0) height += self.spacing;
             height += surface.getTextHeight();
 
-            const w = self.evalLine(slot, line, null);
+            const w = self.evalLine(slot, line, null) catch 0; // TODO
             if (w > width) width = w;
         }
 
@@ -72,7 +89,7 @@ pub const THud = struct {
         };
     }
 
-    pub fn draw(self: THud, slot: u8) void {
+    pub fn draw(self: *THud, slot: u8) void {
         const size = self.calcSize(slot);
         surface.setColor(.{ .r = 0, .g = 0, .b = 0, .a = 192 });
         surface.fillRect(std.meta.Vector(2, i32){ 0, 0 }, std.meta.Vector(2, i32){ @intCast(i32, size[0]), @intCast(i32, size[1]) });
@@ -81,7 +98,7 @@ pub const THud = struct {
         var y = self.padding;
 
         for (self.lines) |line, i| {
-            _ = self.evalLine(slot, line, std.meta.Vector(2, i32){ @intCast(i32, x), @intCast(i32, y) });
+            _ = self.evalLine(slot, line, std.meta.Vector(2, i32){ @intCast(i32, x), @intCast(i32, y) }) catch {}; // TODO
 
             y += surface.getTextHeight();
             if (i > 0) y += self.spacing;
@@ -169,10 +186,11 @@ fn Parser(comptime Reader: type) type {
             }
 
             if (mod.items.len > 0) {
+                const format1 = try format.toOwnedSliceSentinel(0);
                 return THud.Part{ .component = .{
                     .mod = mod.toOwnedSlice(),
                     .name = component.toOwnedSlice(),
-                    .format = format.toOwnedSlice(),
+                    .format = format1,
                 } };
             }
 

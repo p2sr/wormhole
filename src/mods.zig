@@ -6,21 +6,29 @@ const ModSpec = struct {
     version: std.SemanticVersion,
 };
 
-const Mod = struct {
+pub const Mod = struct {
+    pub const THudComponent = struct {
+        cbk: fn (slot: u8, fmt: [*:0]const u8, buf: [*]u8, size: usize) callconv(.C) usize,
+    };
+
+    arena: std.heap.ArenaAllocator.State,
+
     lib: std.DynLib,
     spec: ModSpec,
     deps: []ModSpec,
+    thud_components: std.StringHashMap(THudComponent),
 };
 
 var mods: std.StringHashMap(Mod) = undefined;
-var arena: std.heap.ArenaAllocator = undefined;
+var allocator: *std.mem.Allocator = undefined;
 
-pub fn init(allocator: *std.mem.Allocator) !void {
-    // This arena will be used for persistent allocations of mod info
-    arena = std.heap.ArenaAllocator.init(allocator);
-    errdefer arena.deinit();
+pub fn getMod(name: []const u8) ?Mod {
+    return mods.get(name);
+}
 
-    // This is only used here, so don't allocate from the arena
+pub fn init(allocator1: *std.mem.Allocator) !void {
+    allocator = allocator1;
+
     var mod_list = std.ArrayList(Mod).init(allocator);
     defer mod_list.deinit();
 
@@ -36,15 +44,15 @@ pub fn init(allocator: *std.mem.Allocator) !void {
     var dir_it = dir.iterate();
     while (try dir_it.next()) |ent| {
         if (ent.kind != .File) continue;
-        // Only used locally; don't allocate from the arena
         const path = try std.fs.path.join(allocator, &.{ "mods", ent.name });
         defer allocator.free(path);
         const mod_info = loadMod(path) catch |err| {
             switch (err) {
                 error.MissingModInfo => log.err("Missing MOD_INFO in {s}\n", .{ent.name}),
-                error.BadModName => log.err("Bad mod name in {s}\n", .{ent.name}),
-                error.BadModVersion => log.err("Bad mod version in {s}\n", .{ent.name}),
-                error.BadModDeps => log.err("Bad mod dependencies in {s}\n", .{ent.name}),
+                error.BadModName => log.err("Bad name in {s}\n", .{ent.name}),
+                error.BadModVersion => log.err("Bad version in {s}\n", .{ent.name}),
+                error.BadModDeps => log.err("Bad dependencies in {s}\n", .{ent.name}),
+                error.BadTHudComponents => log.err("Bad tHUD components in {s}\n", .{ent.name}),
                 else => |e| return e,
             }
             continue;
@@ -52,21 +60,36 @@ pub fn init(allocator: *std.mem.Allocator) !void {
         try mod_list.append(mod_info);
     }
 
-    mods = std.StringHashMap(Mod).init(&arena.allocator);
+    mods = std.StringHashMap(Mod).init(allocator);
+    errdefer mods.deinit();
+
     try validateMods(mod_list.items);
 }
 
 pub fn deinit() void {
-    arena.deinit();
+    var it = mods.iterator();
+    while (it.next()) |kv| {
+        kv.value_ptr.arena.promote(allocator).deinit();
+    }
+    mods.deinit();
 }
 
 const ModInfoRaw = extern struct {
+    const THudComponent = extern struct {
+        name: ?[*:0]const u8,
+        cbk: ?fn (slot: u8, fmt: [*:0]const u8, buf: [*]u8, size: usize) callconv(.C) usize,
+    };
+
     name: ?[*:0]const u8,
     version: ?[*:0]const u8,
     deps: ?[*:null]?[*:0]const u8,
+    thud_components: ?[*:.{ .name = null, .cbk = null }]THudComponent,
 };
 
 fn loadMod(path: []const u8) !Mod {
+    var arena = std.heap.ArenaAllocator.init(allocator);
+    errdefer arena.deinit();
+
     var lib = try std.DynLib.open(path);
     errdefer lib.close();
 
@@ -79,7 +102,9 @@ fn loadMod(path: []const u8) !Mod {
 
     const spec = ModSpec{
         .name = std.mem.span(info_raw.name) orelse return error.BadModName,
-        .version = std.SemanticVersion.parse(std.mem.span(info_raw.version) orelse return error.BadModVersion) catch return error.BadModVersion,
+        .version = std.SemanticVersion.parse(
+            std.mem.span(info_raw.version) orelse return error.BadModVersion,
+        ) catch return error.BadModVersion,
     };
 
     if (spec.name.len == 0) return error.BadModName;
@@ -92,21 +117,41 @@ fn loadMod(path: []const u8) !Mod {
     }
 
     var dep_list = std.ArrayList(ModSpec).init(&arena.allocator);
-    errdefer dep_list.deinit();
 
     for (std.mem.span(info_raw.deps) orelse return error.BadModDeps) |dep_str| {
         try dep_list.append(try parseDep(std.mem.span(dep_str orelse unreachable)));
     }
 
+    var thud_components = std.StringHashMap(Mod.THudComponent).init(&arena.allocator);
+
+    if (info_raw.thud_components) |raw| {
+        var i: usize = 0;
+        while (raw[i].name != null or raw[i].cbk != null) : (i += 1) {
+            if (raw[i].name == null) return error.BadTHudComponents;
+            if (raw[i].cbk == null) return error.BadTHudComponents;
+
+            const name = std.mem.span(raw[i].name) orelse unreachable;
+
+            const res = try thud_components.getOrPut(name);
+            if (res.found_existing) {
+                return error.BadTHudComponents;
+            } else {
+                res.value_ptr.* = .{
+                    .cbk = raw[i].cbk.?,
+                };
+            }
+        }
+    } else {
+        return error.BadTHudComponents;
+    }
+
     return Mod{
+        .arena = arena.state,
         .lib = lib,
         .spec = spec,
         .deps = dep_list.toOwnedSlice(),
+        .thud_components = thud_components,
     };
-}
-
-fn getLibPtr(comptime T: type, lib: *std.DynLib, name: [:0]const u8) ?T {
-    return (lib.lookup(*align(1) ?T, name) orelse return null).*;
 }
 
 fn parseDep(str: []const u8) !ModSpec {
