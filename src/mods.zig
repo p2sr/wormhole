@@ -1,25 +1,28 @@
 const std = @import("std");
 const log = @import("log.zig");
 
-const ModInfo = struct {
+const ModSpec = struct {
     name: []const u8,
     version: std.SemanticVersion,
 };
 
 const Mod = struct {
     lib: std.DynLib,
-    info: ModInfo,
-    deps: []ModInfo,
+    spec: ModSpec,
+    deps: []ModSpec,
 };
 
-var mods: std.ArrayList(Mod) = undefined;
-var allocator: *std.mem.Allocator = undefined;
+var mods: std.StringHashMap(Mod) = undefined;
+var arena: std.heap.ArenaAllocator = undefined;
 
-pub fn init(allocator1: *std.mem.Allocator) !void {
-    allocator = allocator1;
+pub fn init(allocator: *std.mem.Allocator) !void {
+    // This arena will be used for persistent allocations of mod info
+    arena = std.heap.ArenaAllocator.init(allocator);
+    errdefer arena.deinit();
 
-    mods = std.ArrayList(Mod).init(allocator);
-    errdefer deinit();
+    // This is only used here, so don't allocate from the arena
+    var mod_list = std.ArrayList(Mod).init(allocator);
+    defer mod_list.deinit();
 
     var dir = std.fs.cwd().openDir("mods", .{ .iterate = true }) catch |err| switch (err) {
         error.FileNotFound, error.NotDir => {
@@ -33,107 +36,138 @@ pub fn init(allocator1: *std.mem.Allocator) !void {
     var dir_it = dir.iterate();
     while (try dir_it.next()) |ent| {
         if (ent.kind != .File) continue;
+        // Only used locally; don't allocate from the arena
         const path = try std.fs.path.join(allocator, &.{ "mods", ent.name });
         defer allocator.free(path);
-        loadMod(path) catch |err| switch (err) {
-            error.InvalidModName => log.err("Invalid MOD_NAME in {s}\n", .{ent.name}),
-            error.InvalidModVersion => log.err("Invalid MOD_VERSION in {s}\n", .{ent.name}),
-            error.InvalidModDeps => log.err("Invalid MOD_DEPS in {s}\n", .{ent.name}),
-            else => |e| return e,
+        const mod_info = loadMod(path) catch |err| {
+            switch (err) {
+                error.MissingModInfo => log.err("Missing MOD_INFO in {s}\n", .{ent.name}),
+                error.BadModName => log.err("Bad mod name in {s}\n", .{ent.name}),
+                error.BadModVersion => log.err("Bad mod version in {s}\n", .{ent.name}),
+                error.BadModDeps => log.err("Bad mod dependencies in {s}\n", .{ent.name}),
+                else => |e| return e,
+            }
+            continue;
         };
+        try mod_list.append(mod_info);
     }
 
-    try checkMods();
-
-    log.info("Loaded {} mods\n", .{mods.items.len});
+    mods = std.StringHashMap(Mod).init(&arena.allocator);
+    try validateMods(mod_list.items);
 }
 
 pub fn deinit() void {
-    for (mods.items) |*mod| {
-        allocator.free(mod.deps);
-        mod.lib.close();
-    }
-
-    mods.deinit();
+    arena.deinit();
 }
 
-fn loadMod(path: []const u8) !void {
+const ModInfoRaw = extern struct {
+    name: ?[*:0]const u8,
+    version: ?[*:0]const u8,
+    deps: ?[*:null]?[*:0]const u8,
+};
+
+fn loadMod(path: []const u8) !Mod {
     var lib = try std.DynLib.open(path);
     errdefer lib.close();
 
-    const name = getLibPtr([*:0]const u8, &lib, "MOD_NAME") orelse return error.InvalidModName;
-    const version = getLibPtr([*:0]const u8, &lib, "MOD_VERSION") orelse return error.InvalidModVersion;
-
     // std.mem.span wants deps to be aligned correctly, so we alignCast
     // this, returning an error if the alignment is incorrect
-    const deps = std.math.alignCast(
-        @alignOf(?[*:0]const u8),
-        lib.lookup([*:null]align(1) const ?[*:0]const u8, "MOD_DEPS") orelse return error.InvalidModDeps,
-    ) catch return error.InvalidModDeps;
+    const info_raw = std.math.alignCast(
+        @alignOf(ModInfoRaw),
+        lib.lookup(*align(1) ModInfoRaw, "MOD_INFO") orelse return error.MissingModInfo,
+    ) catch return error.MissingModInfo;
 
-    const info = ModInfo{
-        .name = std.mem.span(name),
-        .version = try std.SemanticVersion.parse(std.mem.span(version)),
+    const spec = ModSpec{
+        .name = std.mem.span(info_raw.name) orelse return error.BadModName,
+        .version = std.SemanticVersion.parse(std.mem.span(info_raw.version) orelse return error.BadModVersion) catch return error.BadModVersion,
     };
 
-    var dep_list = std.ArrayList(ModInfo).init(allocator);
-    errdefer dep_list.deinit();
+    if (spec.name.len == 0) return error.BadModName;
 
-    for (std.mem.span(deps)) |dep_str| {
-        if (dep_str) |dep_str1| {
-            try dep_list.append(try parseDep(std.mem.span(dep_str1)));
-        } else {
-            return error.InvalidModDeps;
-        }
+    // Validate mod name
+    for (spec.name) |c| {
+        if (c >= 'a' and c <= 'z') continue;
+        if (c == '-') continue;
+        return error.BadModName;
     }
 
-    try mods.append(.{
+    var dep_list = std.ArrayList(ModSpec).init(&arena.allocator);
+    errdefer dep_list.deinit();
+
+    for (std.mem.span(info_raw.deps) orelse return error.BadModDeps) |dep_str| {
+        try dep_list.append(try parseDep(std.mem.span(dep_str orelse unreachable)));
+    }
+
+    return Mod{
         .lib = lib,
-        .info = info,
+        .spec = spec,
         .deps = dep_list.toOwnedSlice(),
-    });
-
-    log.info("Loaded mod {s}\n", .{info.name});
-
-    return;
+    };
 }
 
 fn getLibPtr(comptime T: type, lib: *std.DynLib, name: [:0]const u8) ?T {
     return (lib.lookup(*align(1) ?T, name) orelse return null).*;
 }
 
-fn parseDep(str: []const u8) !ModInfo {
-    const idx = std.mem.lastIndexOfScalar(u8, str, '@') orelse return error.InvalidModVersion;
-    return ModInfo{
+fn parseDep(str: []const u8) !ModSpec {
+    const idx = std.mem.lastIndexOfScalar(u8, str, '@') orelse return error.BadModDeps;
+    return ModSpec{
         .name = str[0..idx],
         .version = try std.SemanticVersion.parse(str[idx + 1 ..]),
     };
 }
 
-fn checkMods() !void {
-    for (mods.items) |*mod| {
-        for (mods.items) |*mod1| {
-            if (mod == mod1) continue;
-            if (std.mem.eql(u8, mod.info.name, mod1.info.name)) {
-                log.err("Multiple versions of mod {s}\n", .{mod.info.name});
-                return error.MultipleModVersions;
-            }
+fn validateMods(mod_list: []Mod) !void {
+    var err = false;
+
+    for (mod_list) |mod| {
+        const res = try mods.getOrPut(mod.spec.name);
+        if (res.found_existing) {
+            log.err("Cannot load mod {s}; already loaded\n", .{
+                mod.spec.name,
+            });
+            err = true;
+            continue;
+        } else {
+            res.value_ptr.* = mod;
         }
+    }
+
+    if (err) {
+        log.err("Error loading mods: duplicate mods\n", .{});
+        return error.VersionConflicts;
+    }
+
+    for (mod_list) |mod| {
         for (mod.deps) |dep| {
-            for (mods.items) |mod1| {
-                if (std.mem.eql(u8, dep.name, mod1.info.name)) {
-                    if (compatibleWith(dep.version, mod1.info.version)) {
-                        break;
-                    } else {
-                        log.err("Incompatible version of dependency {s} for mod {s}\n", .{ dep.name, mod.info.name });
-                        return error.BadDependencyVersion;
-                    }
+            if (mods.get(dep.name)) |dep_loaded| {
+                if (!compatibleWith(dep.version, dep_loaded.spec.version)) {
+                    log.err("Incompatible version of dependency {s} for mod {s}\n", .{
+                        dep.name,
+                        mod.spec.name,
+                    });
+                    err = true;
                 }
+                break;
             } else {
-                log.err("Missing dependency {s} for mod {s}\n", .{ dep.name, mod.info.name });
-                return error.MissingDependency;
+                log.err("Missing dependency {s} for mod {s}\n", .{
+                    dep.name,
+                    mod.spec.name,
+                });
+                err = true;
             }
         }
+    }
+
+    if (err) {
+        log.err("Error loading mods: missing dependencies\n", .{});
+        return error.MissingDependencies;
+    }
+
+    log.info("{} mods loaded:\n", .{mods.count()});
+
+    for (mod_list) |mod| {
+        log.info("  {s}\n", .{mod.spec.name});
     }
 }
 
