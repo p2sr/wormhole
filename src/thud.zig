@@ -11,6 +11,7 @@ pub const THud = struct {
             format: []u8,
         },
         color: ?sdk.Color,
+        align_: ?u32,
     };
 
     pub const Line = struct {
@@ -29,6 +30,7 @@ pub const THud = struct {
         _ = slot;
 
         var width: u32 = 0;
+        var align_base: u32 = 0;
 
         if (draw_pos != null) surface.setColor(line.color);
         for (line.parts) |p| switch (p) {
@@ -40,6 +42,13 @@ pub const THud = struct {
                 // TODO
             },
             .color => |c| if (draw_pos != null) surface.setColor(c orelse line.color),
+            .align_ => |x_opt| {
+                if (x_opt) |x| {
+                    width = std.math.max(width, x + align_base);
+                } else {
+                    align_base = width;
+                }
+            },
         };
 
         return width;
@@ -165,17 +174,26 @@ fn Parser(comptime Reader: type) type {
                     .name = component.toOwnedSlice(),
                     .format = format.toOwnedSlice(),
                 } };
-            } else {
-                // Builtin
-                if (std.mem.eql(u8, component.items, "color")) {
-                    if (std.mem.eql(u8, format.items, "reset")) {
-                        return THud.Part{ .color = null };
-                    } else {
-                        return THud.Part{ .color = try parseColor(format.items) };
-                    }
-                }
-                return error.UnknownExpansion;
             }
+
+            // Built-in expansion
+
+            if (std.mem.eql(u8, component.items, "color")) {
+                if (std.mem.eql(u8, format.items, "reset")) {
+                    return THud.Part{ .color = null };
+                }
+                return THud.Part{ .color = try parseColor(format.items) };
+            }
+
+            if (std.mem.eql(u8, component.items, "align")) {
+                if (std.mem.eql(u8, format.items, "base")) {
+                    return THud.Part{ .align_ = null };
+                }
+                const x = parseUint(format.items) catch return error.BadAlign;
+                return THud.Part{ .align_ = x };
+            }
+
+            return error.UnknownExpansion;
         }
 
         fn parseColor(col: []const u8) !sdk.Color {
@@ -199,6 +217,16 @@ fn Parser(comptime Reader: type) type {
             if (c >= 'a' and c <= 'f') return 10 + c - 'a';
             if (c >= 'A' and c <= 'F') return 10 + c - 'A';
             return error.BadColor;
+        }
+
+        fn parseUint(str: []const u8) !u32 {
+            var x: u32 = 0;
+            for (str) |c| {
+                if (c < '0' and c > '9') return error.BadInt;
+                x *= 10;
+                x += c - '0';
+            }
+            return x;
         }
     };
 }
