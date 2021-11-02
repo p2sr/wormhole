@@ -18,7 +18,7 @@ fn init() !void {
 
     {
         var arena = std.heap.ArenaAllocator.init(&gpa.allocator);
-        var s = std.io.fixedBufferStream("testing {.color:FF0000}red{.color:reset} thud with {.align:base}{.align:50}alignment and {test.test} components");
+        var s = std.io.fixedBufferStream("pos: {.align:0}{.color:FF0000}{test.pos.x} {.align:150}{.color:00FF00}{test.pos.y} {.align:150}{.color:0000FF}{test.pos.z}");
         var p = thud.parser(arena, s.reader());
         const parts = try p.parse();
         var lines = try arena.allocator.alloc(thud.THud.Line, 1);

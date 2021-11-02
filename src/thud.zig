@@ -12,7 +12,7 @@ pub const THud = struct {
             format: [:0]u8,
         },
         color: ?sdk.Color,
-        align_: ?u32,
+        align_: u32,
     };
 
     pub const Line = struct {
@@ -59,12 +59,9 @@ pub const THud = struct {
                 }
             },
             .color => |c| if (draw_pos != null) surface.setColor(c orelse line.color),
-            .align_ => |x_opt| {
-                if (x_opt) |x| {
-                    width = std.math.max(width, x + align_base);
-                } else {
-                    align_base = width;
-                }
+            .align_ => |x| {
+                width = std.math.max(width, x + align_base);
+                align_base = width;
             },
         };
 
@@ -204,9 +201,6 @@ fn Parser(comptime Reader: type) type {
             }
 
             if (std.mem.eql(u8, component.items, "align")) {
-                if (std.mem.eql(u8, format.items, "base")) {
-                    return THud.Part{ .align_ = null };
-                }
                 const x = parseUint(format.items) catch return error.BadAlign;
                 return THud.Part{ .align_ = x };
             }
