@@ -18,13 +18,22 @@ fn init() !void {
 
     {
         var arena = std.heap.ArenaAllocator.init(&gpa.allocator);
-        var s = std.io.fixedBufferStream("pos: {.align:0}{.color:FF0000}{test.pos.x} {.align:150}{.color:00FF00}{test.pos.y} {.align:150}{.color:0000FF}{test.pos.z}");
-        var p = thud.parser(arena, s.reader());
-        const parts = try p.parse();
-        var lines = try arena.allocator.alloc(thud.THud.Line, 1);
+        var s1 = std.io.fixedBufferStream("pos: {.align:0}{.color:FF0000}{test.pos.x} {.align:150}{.color:00FF00}{test.pos.y} {.align:150}{.color:0000FF}{test.pos.z}");
+        var p1 = thud.parser(arena, s1.reader());
+        const parts1 = try p1.parse();
+
+        var s2 = std.io.fixedBufferStream("pos_again: {.align:0}{.color:FF0000}{test.pos.x} {.align:150}{.color:00FF00}{test.pos.y} {.align:150}{.color:0000FF}{test.pos.z}{.align:150}");
+        var p2 = thud.parser(arena, s2.reader());
+        const parts2 = try p2.parse();
+
+        var lines = try arena.allocator.alloc(thud.THud.Line, 2);
         lines[0] = .{
             .color = .{ .r = 255, .g = 255, .b = 255, .a = 255 },
-            .parts = parts,
+            .parts = parts1,
+        };
+        lines[1] = .{
+            .color = .{ .r = 0, .g = 255, .b = 255, .a = 255 },
+            .parts = parts2,
         };
         test_hud = .{
             .ctx = .{

@@ -20,13 +20,8 @@ pub fn Hud(comptime Context: type) type {
                 @intToFloat(f32, screen_size[1]),
             };
 
-            const hud_size_f = std.meta.Vector(2, f32){
-                @intToFloat(f32, hud_size[0]),
-                @intToFloat(f32, hud_size[1]),
-            };
-
             const screen_anchor = self.screen_anchor * screen_size_f;
-            const hud_anchor = self.hud_anchor * hud_size_f;
+            const hud_anchor = self.hud_anchor * hud_size;
 
             const diff = std.meta.Vector(2, i32){
                 @floatToInt(i32, screen_anchor[0] - hud_anchor[0]),
@@ -37,8 +32,6 @@ pub fn Hud(comptime Context: type) type {
         }
 
         pub fn draw(self: *Self, slot: u8) void {
-            surface.scale.* = self.scale;
-
             // TODO: get the size for this slot's "sub-screen" if we're
             // in splitscreen
             const screen_size = blk: {
@@ -50,6 +43,7 @@ pub fn Hud(comptime Context: type) type {
 
             const pos = self.position(slot, screen_size);
             surface.origin.* = pos;
+            surface.scale.* = self.scale;
 
             self.ctx.draw(slot);
         }

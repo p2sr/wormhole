@@ -22,20 +22,20 @@ pub const THud = struct {
 
     arena: std.heap.ArenaAllocator,
     font: void, // TODO
-    spacing: u32,
-    padding: u32,
+    spacing: f32,
+    padding: f32,
     lines: []Line,
 
-    fn evalLine(self: *THud, slot: u8, line: Line, draw_pos: ?std.meta.Vector(2, i32)) !u32 {
+    fn evalLine(self: *THud, slot: u8, line: Line, draw_pos: ?std.meta.Vector(2, f32)) !f32 {
         _ = self;
 
-        var width: u32 = 0;
-        var align_base: u32 = 0;
+        var width: f32 = 0;
+        var align_base: f32 = 0;
 
         if (draw_pos != null) surface.setColor(line.color);
         for (line.parts) |p| switch (p) {
             .text => |str| {
-                if (draw_pos) |pos| surface.drawText(pos + std.meta.Vector(2, i32){ @intCast(i32, width), 0 }, str);
+                if (draw_pos) |pos| surface.drawText(pos + std.meta.Vector(2, f32){ width, 0 }, str);
                 width += surface.getTextLength(str);
             },
             .component => |info| {
@@ -51,7 +51,7 @@ pub const THud = struct {
                             _ = comp.cbk(slot, info.format, str.ptr, buf.len);
                         }
 
-                        if (draw_pos) |pos| surface.drawText(pos + std.meta.Vector(2, i32){ @intCast(i32, width), 0 }, str);
+                        if (draw_pos) |pos| surface.drawText(pos + std.meta.Vector(2, f32){ width, 0 }, str);
                         width += surface.getTextLength(str);
 
                         if (size > 64) self.arena.allocator.free(str);
@@ -60,7 +60,7 @@ pub const THud = struct {
             },
             .color => |c| if (draw_pos != null) surface.setColor(c orelse line.color),
             .align_ => |x| {
-                width = std.math.max(width, x + align_base);
+                width = std.math.max(width, @intToFloat(f32, x) + align_base);
                 align_base = width;
             },
         };
@@ -68,9 +68,9 @@ pub const THud = struct {
         return width;
     }
 
-    pub fn calcSize(self: *THud, slot: u8) std.meta.Vector(2, u32) {
-        var width: u32 = 0;
-        var height: u32 = 0;
+    pub fn calcSize(self: *THud, slot: u8) std.meta.Vector(2, f32) {
+        var width: f32 = 0;
+        var height: f32 = 0;
 
         for (self.lines) |line, i| {
             if (i > 0) height += self.spacing;
@@ -80,7 +80,7 @@ pub const THud = struct {
             if (w > width) width = w;
         }
 
-        return std.meta.Vector(2, u32){
+        return std.meta.Vector(2, f32){
             width + self.padding * 2,
             height + self.padding * 2,
         };
@@ -89,13 +89,13 @@ pub const THud = struct {
     pub fn draw(self: *THud, slot: u8) void {
         const size = self.calcSize(slot);
         surface.setColor(.{ .r = 0, .g = 0, .b = 0, .a = 192 });
-        surface.fillRect(std.meta.Vector(2, i32){ 0, 0 }, std.meta.Vector(2, i32){ @intCast(i32, size[0]), @intCast(i32, size[1]) });
+        surface.fillRect(std.meta.Vector(2, f32){ 0, 0 }, size);
 
         const x = self.padding;
         var y = self.padding;
 
         for (self.lines) |line, i| {
-            _ = self.evalLine(slot, line, std.meta.Vector(2, i32){ @intCast(i32, x), @intCast(i32, y) }) catch {}; // TODO
+            _ = self.evalLine(slot, line, std.meta.Vector(2, f32){ x, y }) catch {}; // TODO
 
             y += surface.getTextHeight();
             if (i > 0) y += self.spacing;

@@ -5,10 +5,20 @@ const ifaces = @import("interface.zig").ifaces;
 var scale_i: f32 = 1;
 var origin_i = std.meta.Vector(2, i32){ 0, 0 };
 
+const units_per_pixel: f32 = 1;
+
 pub const scale = &scale_i; // TODO: this should affect text, but what else?
 pub const origin = &origin_i;
 
 var allocator: *std.mem.Allocator = undefined;
+
+fn translate(coords: std.meta.Vector(2, f32)) std.meta.Vector(2, i32) {
+    const scaled = coords * @splat(2, scale_i / units_per_pixel);
+    return std.meta.Vector(2, i32){
+        origin_i[0] + @floatToInt(i32, scaled[0]),
+        origin_i[1] + @floatToInt(i32, scaled[1]),
+    };
+}
 
 pub fn init(allocator1: *std.mem.Allocator) void {
     allocator = allocator1;
@@ -19,27 +29,31 @@ pub fn setColor(col: sdk.Color) void {
     ifaces.ISurface.drawSetTextColor(col);
 }
 
-pub fn drawRect(a: std.meta.Vector(2, i32), b: std.meta.Vector(2, i32)) void {
-    const xmin = std.math.min(a[0], b[0]) + origin_i[0];
-    const xmax = std.math.max(a[0], b[0]) + origin_i[0];
-    const ymin = std.math.min(a[1], b[1]) + origin_i[1];
-    const ymax = std.math.max(a[1], b[1]) + origin_i[1];
+pub fn drawRect(a: std.meta.Vector(2, f32), b: std.meta.Vector(2, f32)) void {
+    const a1 = translate(a);
+    const b1 = translate(b);
+    const xmin = std.math.min(a1[0], b1[0]);
+    const xmax = std.math.max(a1[0], b1[0]);
+    const ymin = std.math.min(a1[1], b1[1]);
+    const ymax = std.math.max(a1[1], b1[1]);
     ifaces.ISurface.drawOutlinedRect(xmin, ymin, xmax, ymax);
 }
 
-pub fn fillRect(a: std.meta.Vector(2, i32), b: std.meta.Vector(2, i32)) void {
-    const xmin = std.math.min(a[0], b[0]) + origin_i[0];
-    const xmax = std.math.max(a[0], b[0]) + origin_i[0];
-    const ymin = std.math.min(a[1], b[1]) + origin_i[1];
-    const ymax = std.math.max(a[1], b[1]) + origin_i[1];
+pub fn fillRect(a: std.meta.Vector(2, f32), b: std.meta.Vector(2, f32)) void {
+    const a1 = translate(a);
+    const b1 = translate(b);
+    const xmin = std.math.min(a1[0], b1[0]);
+    const xmax = std.math.max(a1[0], b1[0]);
+    const ymin = std.math.min(a1[1], b1[1]);
+    const ymax = std.math.max(a1[1], b1[1]);
     ifaces.ISurface.drawFilledRect(xmin, ymin, xmax, ymax);
 }
 
-pub fn getTextHeight() u32 {
-    return @intCast(u32, ifaces.ISurface.getFontTall(12));
+pub fn getTextHeight() f32 {
+    return @intToFloat(f32, ifaces.ISurface.getFontTall(12)) * units_per_pixel;
 }
 
-pub fn getTextLength(str: []const u8) u32 {
+pub fn getTextLength(str: []const u8) f32 {
     var len: u32 = 0;
 
     for (str) |ch, i| {
@@ -52,12 +66,13 @@ pub fn getTextLength(str: []const u8) u32 {
         len += @floatToInt(u32, wide + 0.6);
     }
 
-    return len;
+    return @intToFloat(f32, len) * units_per_pixel;
 }
 
-pub fn drawText(pos: std.meta.Vector(2, i32), str: []const u8) void {
-    ifaces.ISurface.drawSetTextPos(@intCast(c_int, pos[0] + origin_i[0]), @intCast(c_int, pos[1] + origin_i[1]));
-    ifaces.ISurface.drawSetTextFont(12);
+pub fn drawText(pos: std.meta.Vector(2, f32), str: []const u8) void {
+    const pos1 = translate(pos);
+    ifaces.ISurface.drawSetTextPos(@intCast(c_int, pos1[0]), @intCast(c_int, pos1[1]));
+    ifaces.ISurface.drawSetTextFont(12); // TODO: scale
     if (str.len < 64) {
         var buf: [64]sdk.wchar = undefined;
         for (str) |c, i| buf[i] = c;
