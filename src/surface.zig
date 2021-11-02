@@ -4,16 +4,16 @@ const ifaces = @import("interface.zig").ifaces;
 
 var scale_i: f32 = 1;
 var origin_i = std.meta.Vector(2, i32){ 0, 0 };
-
-const units_per_pixel: f32 = 1;
+var units_per_pixel_i: f32 = 1;
 
 pub const scale = &scale_i; // TODO: this should affect text, but what else?
 pub const origin = &origin_i;
+pub const units_per_pixel = &units_per_pixel_i;
 
 var allocator: *std.mem.Allocator = undefined;
 
 fn translate(coords: std.meta.Vector(2, f32)) std.meta.Vector(2, i32) {
-    const scaled = coords * @splat(2, scale_i / units_per_pixel);
+    const scaled = coords * @splat(2, scale_i / units_per_pixel_i);
     return std.meta.Vector(2, i32){
         origin_i[0] + @floatToInt(i32, scaled[0]),
         origin_i[1] + @floatToInt(i32, scaled[1]),
@@ -50,7 +50,7 @@ pub fn fillRect(a: std.meta.Vector(2, f32), b: std.meta.Vector(2, f32)) void {
 }
 
 pub fn getTextHeight() f32 {
-    return @intToFloat(f32, ifaces.ISurface.getFontTall(12)) * units_per_pixel;
+    return @intToFloat(f32, ifaces.ISurface.getFontTall(12)) * units_per_pixel_i;
 }
 
 pub fn getTextLength(str: []const u8) f32 {
@@ -66,7 +66,7 @@ pub fn getTextLength(str: []const u8) f32 {
         len += @floatToInt(u32, wide + 0.6);
     }
 
-    return @intToFloat(f32, len) * units_per_pixel;
+    return @intToFloat(f32, len) * units_per_pixel_i;
 }
 
 pub fn drawText(pos: std.meta.Vector(2, f32), str: []const u8) void {

@@ -41,6 +41,8 @@ pub fn Hud(comptime Context: type) type {
                 break :blk std.meta.Vector(2, i32){ x, y };
             };
 
+            surface.units_per_pixel.* = 1000.0 / @intToFloat(f32, screen_size[1]);
+
             const pos = self.position(slot, screen_size);
             surface.origin.* = pos;
             surface.scale.* = self.scale;
