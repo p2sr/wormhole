@@ -3,8 +3,6 @@ const sdk = @import("sdk");
 const surface = @import("surface.zig");
 const mods = @import("mods.zig");
 
-const font_height = 70.0;
-
 pub const THud = struct {
     pub const Part = union(enum) {
         text: []u8,
@@ -23,7 +21,7 @@ pub const THud = struct {
     };
 
     arena: std.heap.ArenaAllocator,
-    font: void, // TODO
+    font: surface.Font,
     spacing: f32,
     padding: f32,
     lines: []Line,
@@ -34,16 +32,11 @@ pub const THud = struct {
         var width: f32 = 0;
         var align_base: f32 = 0;
 
-        const font = surface.Font{
-            .name = "Ubuntu Mono",
-            .tall = font_height,
-        };
-
         if (draw_pos != null) surface.setColor(line.color);
         for (line.parts) |p| switch (p) {
             .text => |str| {
-                if (draw_pos) |pos| surface.drawText(font, pos + std.meta.Vector(2, f32){ width, 0 }, str);
-                width += surface.getTextLength(font, str);
+                if (draw_pos) |pos| surface.drawText(self.font, pos + std.meta.Vector(2, f32){ width, 0 }, str);
+                width += surface.getTextLength(self.font, str);
             },
             .component => |info| {
                 if (mods.getMod(info.mod)) |mod| {
@@ -58,8 +51,8 @@ pub const THud = struct {
                             _ = comp.cbk(slot, info.format, str.ptr, buf.len);
                         }
 
-                        if (draw_pos) |pos| surface.drawText(font, pos + std.meta.Vector(2, f32){ width, 0 }, str);
-                        width += surface.getTextLength(font, str);
+                        if (draw_pos) |pos| surface.drawText(self.font, pos + std.meta.Vector(2, f32){ width, 0 }, str);
+                        width += surface.getTextLength(self.font, str);
 
                         if (size > 64) self.arena.allocator.free(str);
                     }
@@ -81,7 +74,7 @@ pub const THud = struct {
 
         for (self.lines) |line, i| {
             if (i > 0) height += self.spacing;
-            height += font_height; //surface.getTextHeight();
+            height += surface.getFontHeight(self.font);
 
             const w = self.evalLine(slot, line, null) catch 0; // TODO
             if (w > width) width = w;
@@ -104,7 +97,7 @@ pub const THud = struct {
         for (self.lines) |line, i| {
             _ = self.evalLine(slot, line, std.meta.Vector(2, f32){ x, y }) catch {}; // TODO
 
-            y += font_height; //surface.getTextHeight();
+            y += surface.getFontHeight(self.font);
             if (i > 0) y += self.spacing;
         }
     }

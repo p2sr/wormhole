@@ -39,7 +39,10 @@ fn init() !void {
         test_hud = .{
             .ctx = .{
                 .arena = arena,
-                .font = {},
+                .font = .{
+                    .name = "Tahoma",
+                    .tall = 70.0,
+                },
                 .spacing = 5,
                 .padding = 20,
                 .lines = lines,

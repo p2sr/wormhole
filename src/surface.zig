@@ -55,6 +55,12 @@ pub fn fillRect(a: std.meta.Vector(2, f32), b: std.meta.Vector(2, f32)) void {
     ifaces.ISurface.drawFilledRect(xmin, ymin, xmax, ymax);
 }
 
+pub fn getFontHeight(f: Font) f32 {
+    const font_id = font_manager.findRawFont(f.name, @floatToInt(u32, f.tall / units_per_pixel_i)) orelse 12; // TODO: default
+    const tall = ifaces.ISurface.getFontTall(font_id);
+    return @intToFloat(f32, tall) * units_per_pixel_i;
+}
+
 pub fn getTextLength(f: Font, str: []const u8) f32 {
     var len: u32 = 0;
 
