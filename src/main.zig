@@ -5,6 +5,7 @@ const interface = @import("interface.zig");
 const mods = @import("mods.zig");
 const log = @import("log.zig");
 const surface = @import("surface.zig");
+const font_manager = @import("font_manager.zig");
 
 var gpa: std.heap.GeneralPurposeAllocator(.{}) = undefined;
 
@@ -46,7 +47,7 @@ fn init() !void {
             .screen_anchor = std.meta.Vector(2, f32){ 0.5, 0.5 },
             .hud_anchor = std.meta.Vector(2, f32){ 0.5, 0.5 },
             .pix_off = std.meta.Vector(2, i32){ 0, 0 },
-            .scale = 1.0,
+            .scale = 0.5,
         };
     }
 
@@ -57,12 +58,18 @@ fn init() !void {
 
     surface.init(&gpa.allocator);
 
+    font_manager.init(&gpa.allocator);
+    errdefer font_manager.deinit();
+
     try mods.init(&gpa.allocator);
     errdefer mods.deinit();
+
+    font_manager.listFonts();
 }
 
 fn deinit() void {
     mods.deinit();
+    font_manager.deinit();
     interface.deinit();
     test_hud.ctx.arena.deinit();
     std.debug.assert(!gpa.deinit());

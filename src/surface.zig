@@ -1,6 +1,7 @@
 const std = @import("std");
 const sdk = @import("sdk");
 const ifaces = @import("interface.zig").ifaces;
+const font_manager = @import("font_manager.zig");
 
 var scale_i: f32 = 1;
 var origin_i = std.meta.Vector(2, i32){ 0, 0 };
@@ -11,6 +12,11 @@ pub const origin = &origin_i;
 pub const units_per_pixel = &units_per_pixel_i;
 
 var allocator: *std.mem.Allocator = undefined;
+
+pub const Font = struct {
+    name: [:0]const u8,
+    tall: f32,
+};
 
 fn translate(coords: std.meta.Vector(2, f32)) std.meta.Vector(2, i32) {
     const scaled = coords * @splat(2, scale_i / units_per_pixel_i);
@@ -49,12 +55,10 @@ pub fn fillRect(a: std.meta.Vector(2, f32), b: std.meta.Vector(2, f32)) void {
     ifaces.ISurface.drawFilledRect(xmin, ymin, xmax, ymax);
 }
 
-pub fn getTextHeight() f32 {
-    return @intToFloat(f32, ifaces.ISurface.getFontTall(12)) * units_per_pixel_i;
-}
-
-pub fn getTextLength(str: []const u8) f32 {
+pub fn getTextLength(f: Font, str: []const u8) f32 {
     var len: u32 = 0;
+
+    const font_id = font_manager.findRawFont(f.name, @floatToInt(u32, f.tall / units_per_pixel_i)) orelse 12; // TODO: default
 
     for (str) |ch, i| {
         const prev: sdk.wchar = if (i == 0) 0 else str[i - 1];
@@ -62,18 +66,21 @@ pub fn getTextLength(str: []const u8) f32 {
         var wide: f32 = undefined;
         var a: f32 = undefined;
         var c: f32 = undefined;
-        ifaces.ISurface.getKernedCharWidth(12, ch, prev, next, &wide, &a, &c);
+        ifaces.ISurface.getKernedCharWidth(font_id, ch, prev, next, &wide, &a, &c);
         len += @floatToInt(u32, wide + 0.6);
     }
 
     return @intToFloat(f32, len) * units_per_pixel_i;
 }
 
-pub fn drawText(pos: std.meta.Vector(2, f32), str: []const u8) void {
+pub fn drawText(f: Font, pos: std.meta.Vector(2, f32), str: []const u8) void {
+    const font_id = font_manager.findRawFont(f.name, @floatToInt(u32, f.tall * scale_i / units_per_pixel_i)) orelse 12; // TODO: default
+
     const pos1 = translate(pos);
     ifaces.ISurface.drawSetTextPos(@intCast(c_int, pos1[0]), @intCast(c_int, pos1[1]));
-    ifaces.ISurface.drawSetTextFont(12); // TODO: scale
-    if (str.len < 64) {
+    ifaces.ISurface.drawSetTextFont(font_id);
+
+    if (str.len <= 64) {
         var buf: [64]sdk.wchar = undefined;
         for (str) |c, i| buf[i] = c;
         ifaces.ISurface.drawPrintText(&buf, @intCast(c_int, str.len), .default);

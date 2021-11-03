@@ -14,6 +14,9 @@ pub fn build(b: *std.build.Builder) void {
     lib.setBuildMode(mode);
     lib.setTarget(target);
     lib.linkLibC();
+    if (target.getOsTag() == .linux) {
+        lib.linkSystemLibrary("fontconfig");
+    }
     lib.install();
 
     var main_tests = b.addTest("src/main.zig");
