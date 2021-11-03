@@ -2,6 +2,7 @@ const std = @import("std");
 const sdk = @import("sdk");
 const surface = @import("surface.zig");
 const mods = @import("mods.zig");
+const hud = @import("hud.zig");
 
 pub const THud = struct {
     pub const Part = union(enum) {
@@ -105,7 +106,7 @@ pub const THud = struct {
 
 fn Parser(comptime Reader: type) type {
     return struct {
-        arena: std.heap.ArenaAllocator,
+        allocator: *std.mem.Allocator,
         reader: Reader,
         peeked: ?u8 = null,
 
@@ -123,8 +124,8 @@ fn Parser(comptime Reader: type) type {
         }
 
         pub fn parse(self: *Self) ![]THud.Part {
-            var parts = std.ArrayList(THud.Part).init(&self.arena.allocator);
-            var str = std.ArrayList(u8).init(&self.arena.allocator);
+            var parts = std.ArrayList(THud.Part).init(self.allocator);
+            var str = std.ArrayList(u8).init(self.allocator);
 
             while (true) {
                 const c = self.next() catch |err| switch (err) {
@@ -151,7 +152,7 @@ fn Parser(comptime Reader: type) type {
         }
 
         fn parseExpansion(self: *Self) !THud.Part {
-            var mod = std.ArrayList(u8).init(&self.arena.allocator);
+            var mod = std.ArrayList(u8).init(self.allocator);
             defer mod.deinit();
 
             var c = try self.next();
@@ -161,7 +162,7 @@ fn Parser(comptime Reader: type) type {
                 c = try self.next();
             }
 
-            var component = std.ArrayList(u8).init(&self.arena.allocator);
+            var component = std.ArrayList(u8).init(self.allocator);
             defer component.deinit();
 
             c = try self.next();
@@ -171,7 +172,7 @@ fn Parser(comptime Reader: type) type {
                 c = try self.next();
             }
 
-            var format = std.ArrayList(u8).init(&self.arena.allocator);
+            var format = std.ArrayList(u8).init(self.allocator);
             defer format.deinit();
 
             if (c == ':') {
@@ -243,6 +244,93 @@ fn Parser(comptime Reader: type) type {
     };
 }
 
-pub fn parser(arena: std.heap.ArenaAllocator, r: anytype) Parser(@TypeOf(r)) {
-    return .{ .arena = arena, .reader = r };
+fn parser(allocator1: *std.mem.Allocator, r: anytype) Parser(@TypeOf(r)) {
+    return .{ .allocator = allocator1, .reader = r };
+}
+
+var thuds: []hud.Hud(THud) = undefined;
+var allocator: *std.mem.Allocator = undefined;
+
+pub fn init(allocator1: *std.mem.Allocator) !void {
+    @setEvalBranchQuota(10000);
+
+    allocator = allocator1;
+
+    const RawInfo = struct {
+        font_name: []u8,
+        font_size: f32,
+        color: [4]u8,
+        spacing: f32,
+        padding: f32,
+        screen_anchor: [2]f32,
+        hud_anchor: [2]f32,
+        pix_off: [2]i32,
+        scale: f32,
+        lines: [][]u8,
+    };
+
+    var parse_arena = std.heap.ArenaAllocator.init(allocator);
+    defer parse_arena.deinit();
+
+    var file_contents = try std.fs.cwd().readFileAlloc(allocator, "thud.json", std.math.maxInt(usize));
+    defer allocator.free(file_contents);
+
+    const cfg = try std.json.parse([]RawInfo, &std.json.TokenStream.init(file_contents), .{ .allocator = &parse_arena.allocator });
+
+    var huds = std.ArrayList(hud.Hud(THud)).init(allocator);
+    defer {
+        for (huds.items) |h| h.ctx.arena.deinit();
+        huds.deinit();
+    }
+
+    for (cfg) |raw| {
+        var arena = std.heap.ArenaAllocator.init(allocator);
+        errdefer arena.deinit();
+
+        var lines = std.ArrayList(THud.Line).init(&arena.allocator);
+
+        for (raw.lines) |line| {
+            var s = std.io.fixedBufferStream(line);
+            const parts = try parser(&arena.allocator, s.reader()).parse();
+
+            try lines.append(.{
+                .color = .{
+                    .r = raw.color[0],
+                    .g = raw.color[1],
+                    .b = raw.color[2],
+                    .a = raw.color[3],
+                },
+                .parts = parts,
+            });
+        }
+
+        const name = try arena.allocator.dupeZ(u8, raw.font_name);
+
+        try huds.append(.{
+            .ctx = .{
+                .arena = arena,
+                .font = .{
+                    .name = name,
+                    .tall = raw.font_size,
+                },
+                .spacing = raw.spacing,
+                .padding = raw.padding,
+                .lines = lines.toOwnedSlice(),
+            },
+            .screen_anchor = std.meta.Vector(2, f32){ raw.screen_anchor[0], raw.screen_anchor[1] },
+            .hud_anchor = std.meta.Vector(2, f32){ raw.hud_anchor[0], raw.hud_anchor[1] },
+            .pix_off = std.meta.Vector(2, i32){ raw.pix_off[0], raw.pix_off[1] },
+            .scale = raw.scale,
+        });
+    }
+
+    thuds = huds.toOwnedSlice();
+}
+
+pub fn deinit() void {
+    allocator.free(thuds);
+}
+
+pub fn drawAll(slot: u8) void {
+    for (thuds) |*h| h.draw(slot);
 }

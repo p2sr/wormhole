@@ -6,53 +6,13 @@ const mods = @import("mods.zig");
 const log = @import("log.zig");
 const surface = @import("surface.zig");
 const font_manager = @import("font_manager.zig");
+const thud = @import("thud.zig");
 
 var gpa: std.heap.GeneralPurposeAllocator(.{}) = undefined;
-
-const hud = @import("hud.zig");
-const thud = @import("thud.zig");
-pub var test_hud: hud.Hud(thud.THud) = undefined;
 
 fn init() !void {
     gpa = .{};
     errdefer std.debug.assert(!gpa.deinit());
-
-    {
-        var arena = std.heap.ArenaAllocator.init(&gpa.allocator);
-        var s1 = std.io.fixedBufferStream("pos: {.align:0}{.color:FF0000}{test.pos.x} {.align:150}{.color:00FF00}{test.pos.y} {.align:150}{.color:0000FF}{test.pos.z}");
-        var p1 = thud.parser(arena, s1.reader());
-        const parts1 = try p1.parse();
-
-        var s2 = std.io.fixedBufferStream("pos_again: {.align:0}{.color:FF0000}{test.pos.x} {.align:150}{.color:00FF00}{test.pos.y} {.align:150}{.color:0000FF}{test.pos.z}{.align:150}");
-        var p2 = thud.parser(arena, s2.reader());
-        const parts2 = try p2.parse();
-
-        var lines = try arena.allocator.alloc(thud.THud.Line, 2);
-        lines[0] = .{
-            .color = .{ .r = 255, .g = 255, .b = 255, .a = 255 },
-            .parts = parts1,
-        };
-        lines[1] = .{
-            .color = .{ .r = 0, .g = 255, .b = 255, .a = 255 },
-            .parts = parts2,
-        };
-        test_hud = .{
-            .ctx = .{
-                .arena = arena,
-                .font = .{
-                    .name = "Tahoma",
-                    .tall = 70.0,
-                },
-                .spacing = 5,
-                .padding = 20,
-                .lines = lines,
-            },
-            .screen_anchor = std.meta.Vector(2, f32){ 0.5, 0.5 },
-            .hud_anchor = std.meta.Vector(2, f32){ 0.5, 0.5 },
-            .pix_off = std.meta.Vector(2, i32){ 0, 0 },
-            .scale = 0.5,
-        };
-    }
 
     try tier0.init();
 
@@ -67,14 +27,17 @@ fn init() !void {
     try mods.init(&gpa.allocator);
     errdefer mods.deinit();
 
+    try thud.init(&gpa.allocator);
+    errdefer thud.deinit();
+
     font_manager.listFonts();
 }
 
 fn deinit() void {
+    thud.deinit();
     mods.deinit();
     font_manager.deinit();
     interface.deinit();
-    test_hud.ctx.arena.deinit();
     std.debug.assert(!gpa.deinit());
 }
 

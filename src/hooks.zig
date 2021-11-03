@@ -47,7 +47,7 @@ IEngineVGui: struct {
         startDrawing(ifaces.ISurface);
 
         if (mode.ui_panels) {
-            @import("root").test_hud.draw(0);
+            @import("thud.zig").drawAll(0);
             //const str = "Hello from Wormhole!";
 
             // Seriously Valve, what the fuck is with the wchar strings?
