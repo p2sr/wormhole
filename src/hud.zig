@@ -12,8 +12,8 @@ pub fn Hud(comptime Context: type) type {
 
         const Self = @This();
 
-        pub fn position(self: *Self, slot: u8, screen_size: std.meta.Vector(2, i32)) std.meta.Vector(2, i32) {
-            const hud_size = self.ctx.calcSize(slot);
+        pub fn position(self: *Self, slot: u8, screen_size: std.meta.Vector(2, i32), units_per_pixel: f32) std.meta.Vector(2, i32) {
+            const hud_size = self.ctx.calcSize(slot) * @splat(2, self.scale / units_per_pixel);
 
             const screen_size_f = std.meta.Vector(2, f32){
                 @intToFloat(f32, screen_size[0]),
@@ -43,7 +43,7 @@ pub fn Hud(comptime Context: type) type {
 
             surface.units_per_pixel.* = 1000.0 / @intToFloat(f32, screen_size[1]);
 
-            const pos = self.position(slot, screen_size);
+            const pos = self.position(slot, screen_size, surface.units_per_pixel.*);
             surface.origin.* = pos;
             surface.scale.* = self.scale;
 
