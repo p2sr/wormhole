@@ -21,7 +21,7 @@ pub const THud = struct {
         parts: []Part,
     };
 
-    arena: std.heap.ArenaAllocator,
+    arena: std.heap.ArenaAllocator.State,
     font: surface.Font,
     spacing: f32,
     padding: f32,
@@ -48,14 +48,14 @@ pub const THud = struct {
                         if (size <= 64) {
                             str = buf[0..size];
                         } else {
-                            str = try self.arena.allocator.alloc(u8, size);
+                            str = try allocator.alloc(u8, size);
                             _ = comp.cbk(slot, info.format, str.ptr, buf.len);
                         }
 
                         if (draw_pos) |pos| surface.drawText(self.font, pos + std.meta.Vector(2, f32){ width, 0 }, str);
                         width += surface.getTextLength(self.font, str);
 
-                        if (size > 64) self.arena.allocator.free(str);
+                        if (size > 64) allocator.free(str);
                     }
                 }
             },
@@ -279,7 +279,7 @@ pub fn init(allocator1: *std.mem.Allocator) !void {
 
     var huds = std.ArrayList(hud.Hud(THud)).init(allocator);
     defer {
-        for (huds.items) |h| h.ctx.arena.deinit();
+        for (huds.items) |h| h.ctx.arena.promote(allocator).deinit();
         huds.deinit();
     }
 
@@ -308,7 +308,7 @@ pub fn init(allocator1: *std.mem.Allocator) !void {
 
         try huds.append(.{
             .ctx = .{
-                .arena = arena,
+                .arena = arena.state,
                 .font = .{
                     .name = name,
                     .tall = raw.font_size,
@@ -328,6 +328,7 @@ pub fn init(allocator1: *std.mem.Allocator) !void {
 }
 
 pub fn deinit() void {
+    for (thuds) |*h| h.ctx.arena.promote(allocator).deinit();
     allocator.free(thuds);
 }
 
