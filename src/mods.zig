@@ -11,12 +11,17 @@ pub const Mod = struct {
         cbk: fn (slot: u8, fmt: [*:0]const u8, buf: [*]u8, size: usize) callconv(.C) usize,
     };
 
+    pub const EventHandler = struct {
+        cbk: fn (data: ?*c_void) callconv(.C) void,
+    };
+
     arena: std.heap.ArenaAllocator.State,
 
     lib: std.DynLib,
     spec: ModSpec,
     deps: []ModSpec,
     thud_components: std.StringHashMap(THudComponent),
+    event_handlers: std.StringHashMap([]EventHandler),
 };
 
 var mods: std.StringHashMap(Mod) = undefined;
@@ -24,6 +29,22 @@ var allocator: *std.mem.Allocator = undefined;
 
 pub fn getMod(name: []const u8) ?Mod {
     return mods.get(name);
+}
+
+pub const Iterator = struct {
+    it: std.StringHashMap(Mod).Iterator,
+    const Elem = std.meta.Tuple(&.{ []const u8, Mod });
+    pub fn next(self: *Iterator) ?Elem {
+        if (self.it.next()) |ent| {
+            return Elem{ ent.key_ptr.*, ent.value_ptr.* };
+        } else {
+            return null;
+        }
+    }
+};
+
+pub fn iterator() Iterator {
+    return .{ .it = mods.iterator() };
 }
 
 pub fn init(allocator1: *std.mem.Allocator) !void {
@@ -53,6 +74,7 @@ pub fn init(allocator1: *std.mem.Allocator) !void {
                 error.BadModVersion => log.err("Bad version in {s}\n", .{ent.name}),
                 error.BadModDeps => log.err("Bad dependencies in {s}\n", .{ent.name}),
                 error.BadTHudComponents => log.err("Bad tHUD components in {s}\n", .{ent.name}),
+                error.BadEventHandlers => log.err("Bad event handlers in {s}\n", .{ent.name}),
                 else => |e| return e,
             }
             continue;
@@ -80,10 +102,16 @@ const ModInfoRaw = extern struct {
         cbk: ?fn (slot: u8, fmt: [*:0]const u8, buf: [*]u8, size: usize) callconv(.C) usize,
     };
 
+    const EventHandler = extern struct {
+        name: ?[*:0]const u8,
+        cbk: ?fn (data: ?*c_void) callconv(.C) void,
+    };
+
     name: ?[*:0]const u8,
     version: ?[*:0]const u8,
     deps: ?[*:null]?[*:0]const u8,
     thud_components: ?[*:.{ .name = null, .cbk = null }]THudComponent,
+    event_handlers: ?[*:.{ .name = null, .cbk = null }]EventHandler,
 };
 
 fn loadMod(path: []const u8) !Mod {
@@ -145,12 +173,55 @@ fn loadMod(path: []const u8) !Mod {
         return error.BadTHudComponents;
     }
 
+    // This is temporary so we allocate it on the normal allocator
+    var event_handlers_al = std.StringHashMap(std.ArrayList(Mod.EventHandler)).init(allocator);
+    defer {
+        var it = event_handlers_al.iterator();
+        while (it.next()) |kv| {
+            kv.value_ptr.deinit();
+        }
+        event_handlers_al.deinit();
+    }
+
+    if (info_raw.event_handlers) |raw| {
+        var i: usize = 0;
+        while (raw[i].name != null or raw[i].cbk != null) : (i += 1) {
+            if (raw[i].name == null) return error.BadEventHandlers;
+            if (raw[i].cbk == null) return error.BadEventHandlers;
+
+            const name = std.mem.span(raw[i].name) orelse unreachable;
+
+            const res = try event_handlers_al.getOrPut(name);
+            if (!res.found_existing) {
+                // These are also temporary so we allocate them on the
+                // normal allocator too
+                res.value_ptr.* = std.ArrayList(Mod.EventHandler).init(allocator);
+            }
+            try res.value_ptr.append(.{ .cbk = raw[i].cbk.? });
+        }
+    }
+
+    // Move them into a more efficient representation where each slice
+    // is actually the right length
+    var event_handlers = std.StringHashMap([]Mod.EventHandler).init(&arena.allocator);
+
+    {
+        var it = event_handlers_al.iterator();
+        while (it.next()) |kv| {
+            const ptr = try arena.allocator.alloc(Mod.EventHandler, kv.value_ptr.items.len);
+            std.mem.copy(Mod.EventHandler, ptr, kv.value_ptr.items);
+            kv.value_ptr.clearAndFree();
+            try event_handlers.put(kv.key_ptr.*, ptr);
+        }
+    }
+
     return Mod{
         .arena = arena.state,
         .lib = lib,
         .spec = spec,
         .deps = dep_list.toOwnedSlice(),
         .thud_components = thud_components,
+        .event_handlers = event_handlers,
     };
 }
 
