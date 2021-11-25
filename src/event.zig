@@ -11,7 +11,7 @@ fn trigger_i(ev_name: []const u8, data: ?*c_void) void {
                 // TODO: record that we're in that mod's code
                 // otherwise, stuff like dispatching events from an
                 // event callback will be super fucked up
-                h.cbk(data);
+                h.call(mod[0], data);
             }
         }
     }

@@ -1,5 +1,6 @@
 const std = @import("std");
 const log = @import("log.zig");
+const api = @import("api.zig");
 
 const ModSpec = struct {
     name: []const u8,
@@ -8,11 +9,17 @@ const ModSpec = struct {
 
 pub const Mod = struct {
     pub const THudComponent = struct {
-        cbk: fn (slot: u8, fmt: [*:0]const u8, buf: [*]u8, size: usize) callconv(.C) usize,
+        _cbk: fn (slot: u8, fmt: [*:0]const u8, buf: [*]u8, size: usize) callconv(.C) usize,
+        pub fn call(self: THudComponent, mod: []const u8, slot: u8, fmt: [*:0]const u8, buf: [*]u8, size: usize) usize {
+            return api.callExternal(mod, self._cbk, .{ slot, fmt, buf, size });
+        }
     };
 
     pub const EventHandler = struct {
-        cbk: fn (data: ?*c_void) callconv(.C) void,
+        _cbk: fn (data: ?*c_void) callconv(.C) void,
+        pub fn call(self: EventHandler, mod: []const u8, data: ?*c_void) void {
+            api.callExternal(mod, self._cbk, .{data});
+        }
     };
 
     arena: std.heap.ArenaAllocator.State,
@@ -165,7 +172,7 @@ fn loadMod(path: []const u8) !Mod {
                 return error.BadTHudComponents;
             } else {
                 res.value_ptr.* = .{
-                    .cbk = raw[i].cbk.?,
+                    ._cbk = raw[i].cbk.?,
                 };
             }
         }
@@ -197,7 +204,7 @@ fn loadMod(path: []const u8) !Mod {
                 // normal allocator too
                 res.value_ptr.* = std.ArrayList(Mod.EventHandler).init(allocator);
             }
-            try res.value_ptr.append(.{ .cbk = raw[i].cbk.? });
+            try res.value_ptr.append(.{ ._cbk = raw[i].cbk.? });
         }
     }
 

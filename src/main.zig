@@ -8,6 +8,10 @@ const surface = @import("surface.zig");
 const font_manager = @import("font_manager.zig");
 const thud = @import("thud.zig");
 
+comptime {
+    _ = @import("api.zig");
+}
+
 var gpa: std.heap.GeneralPurposeAllocator(.{}) = undefined;
 
 fn init() !void {

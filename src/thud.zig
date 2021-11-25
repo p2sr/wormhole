@@ -43,13 +43,13 @@ pub const THud = struct {
                 if (mods.getMod(info.mod)) |mod| {
                     if (mod.thud_components.get(info.name)) |comp| {
                         var buf: [64]u8 = undefined;
-                        const size = comp.cbk(slot, info.format, &buf, buf.len);
+                        const size = comp.call(info.mod, slot, info.format, &buf, buf.len);
                         var str: []u8 = undefined;
                         if (size <= 64) {
                             str = buf[0..size];
                         } else {
                             str = try allocator.alloc(u8, size);
-                            _ = comp.cbk(slot, info.format, str.ptr, buf.len);
+                            _ = comp.call(info.mod, slot, info.format, str.ptr, buf.len);
                         }
 
                         if (draw_pos) |pos| surface.drawText(self.font, pos + std.meta.Vector(2, f32){ width, 0 }, str);
