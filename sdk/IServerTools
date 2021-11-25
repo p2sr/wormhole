@@ -1,0 +1,30 @@
+~	~	fn () void
+
+getIServerEntity	GetIServerEntity	fn (client_entity: *sdk.IClientEntity) ?*sdk.IServerEntity
+snapPlayerToPosition	SnapPlayerToPosition	fn (org: *const sdk.Vector3D, ang: *const sdk.QAngle, client_player: *sdk.IClientEntity) bool
+getPlayerPosition	GetPlayerPosition	fn (org: *sdk.Vector3D, ang: *sdk.QAngle, client_player: *sdk.IClientEntity) bool
+setPlayerFov	SetPlayerFOV	fn (fov: c_int, client_player: *sdk.IClientEntity) bool
+getPlayerFov	GetPlayerFOV	fn (client_player: *sdk.IClientEntity) c_int
+isInNoClipMode	IsInNoClipMode	fn (client_player: *sdk.IClientEntity) bool
+
+firstEntity	FirstEntity	fn () ?*c_void
+nextEntity	nextEntity	fn (ent: ?*c_void) ?*c_void
+findEntityByHammerId	FindEntityByHammerID	fn (hammer_id: c_int) ?*c_void
+
+getKeyValue	GetKeyValue	fn (ent: *c_void, field: [*:0]const u8, val: [*]u8, max_len: c_int) bool
+setKeyValueStr	SetKeyValue	fn (ent: *c_void, field: [*:0]const u8, val: [*:0]const u8) bool
+setKeyValueFloat	SetKeyValue	fn (ent: *c_void, field: [*:0]const u8, val: f32) bool
+setKeyValueVec	SetKeyValue	fn (ent: *c_void, field: [*:0]const u8, val: *const sdk.Vector3D) bool
+
+createEntityByName	CreateEntityByName	fn (classname: [*:0]const u8) *c_void
+dispatchSpawn	DispatchSpawn	fn (ent: *c_void) void
+destroyEntityByHammerId	DestroyEntityByHammerId	fn (hammer_id: c_int) bool
+
+respawnEntitiesWithEdits	RespawnEntitiesWithEdits	fn (infos: [*]sdk.CEntityRespawnInfo, ninfos: c_int) bool
+
+reloadParticleDefinitions	ReloadParticleDefinitions	fn (filename: [*:0]const u8, buf_data: [*]const u8, len: c_int) void
+
+addOriginToPvs	AddOriginToPVS	fn (org: *const sdk.Vector3D) void
+moveEngineViewTo	MoveEngineViewTo	fn (pos: *const sdk.Vector3D, ang: *const sdk.QAngle) void
+
+removeEntity	RemoveEntity	fn (hammer_id: c_int) void

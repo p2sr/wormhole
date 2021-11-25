@@ -134,6 +134,11 @@ pub const Vector3D = extern struct {
     y: f32,
     z: f32,
 };
+pub const QAngle = extern struct {
+    pitch: f32,
+    yaw: f32,
+    roll: f32,
+};
 pub const Model = opaque {}; // model_t
 pub const SurfInfo = struct {
     verts: [16]Vector3D,
@@ -146,3 +151,9 @@ pub const VPlane = struct {
     dist: f32,
 };
 pub const IMaterial = opaque {};
+pub const IClientEntity = opaque {};
+pub const IServerEntity = opaque {};
+pub const CEntityRespawnInfo = extern struct {
+    hammer_id: c_int,
+    ent_text: [*:0]const u8,
+};

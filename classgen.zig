@@ -313,6 +313,7 @@ const TypeDesc = union(enum) {
     ptr: Pointer,
     array: Array,
     func: Fn,
+    optional: *const TypeDesc,
 
     pub const Pointer = struct {
         size: Size,
@@ -379,6 +380,10 @@ const TypeDesc = union(enum) {
                 }
                 try writer.print(") callconv(.C) {}", .{func.return_type});
             },
+
+            .optional => |child| {
+                try writer.print("?{}", .{child.*});
+            },
         }
     }
 
@@ -428,6 +433,7 @@ const TypeDesc = union(enum) {
                 .asterisk => self.parsePointer(.one, null),
                 .l_bracket => self.parseArray(),
                 .keyword_fn => self.parseFn(),
+                .question_mark => self.parseOptional(),
                 else => error.WrongToken, // TODO: better errors
             };
         }
@@ -554,6 +560,11 @@ const TypeDesc = union(enum) {
                 .return_type = try self.parseAlloc(),
                 .variadic = variadic,
             } };
+        }
+
+        fn parseOptional(self: *Parser) !TypeDesc {
+            const child = try self.parseAlloc();
+            return TypeDesc{ .optional = child };
         }
     };
 };

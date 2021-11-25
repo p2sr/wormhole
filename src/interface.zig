@@ -20,6 +20,7 @@ const locations = .{
     .IEngineVGui = "engine:VEngineVGui001",
     .ISurface = "vguimatsurface:VGUI_Surface031",
     .IVEngineClient = "engine:VEngineClient015",
+    .IServerTools = "server:VSERVERTOOLS001",
 };
 
 var allocator: *std.mem.Allocator = undefined;
