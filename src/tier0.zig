@@ -12,6 +12,8 @@ pub fn init() !void {
         func.* = lib.lookup(@TypeOf(func.*), name) orelse return error.SymbolNotFound;
     }
 
+    ready = true;
+
     log.devInfo("Initialized tier0\n", .{});
 }
 
@@ -21,6 +23,7 @@ pub var warning: FmtFn = undefined;
 pub var colorMsg: fn (color: *const sdk.Color, fmt: [*:0]const u8, ...) callconv(.C) void = undefined;
 pub var devMsg: FmtFn = undefined;
 pub var devWarning: FmtFn = undefined;
+pub var ready: bool = false;
 
 const names = switch (@import("builtin").os.tag) {
     .windows => .{
