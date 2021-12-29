@@ -11,7 +11,7 @@ pub const scale = &scale_i; // TODO: this should affect text, but what else?
 pub const origin = &origin_i;
 pub const units_per_pixel = &units_per_pixel_i;
 
-var allocator: *std.mem.Allocator = undefined;
+var allocator: std.mem.Allocator = undefined;
 
 pub const Font = struct {
     name: [:0]const u8,
@@ -26,7 +26,7 @@ fn translate(coords: std.meta.Vector(2, f32)) std.meta.Vector(2, i32) {
     };
 }
 
-pub fn init(allocator1: *std.mem.Allocator) void {
+pub fn init(allocator1: std.mem.Allocator) void {
     allocator = allocator1;
 }
 

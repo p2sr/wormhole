@@ -68,10 +68,10 @@ const ClassGenStep = struct {
 };
 
 const ClassGenerator = struct {
-    allocator: *std.mem.Allocator,
+    allocator: std.mem.Allocator,
     buf: std.ArrayList(u8),
 
-    pub fn init(arena_allocator: *std.mem.Allocator) !ClassGenerator {
+    pub fn init(arena_allocator: std.mem.Allocator) !ClassGenerator {
         var self = ClassGenerator{
             .allocator = arena_allocator,
             .buf = std.ArrayList(u8).init(arena_allocator),
@@ -387,7 +387,7 @@ const TypeDesc = union(enum) {
         }
     }
 
-    pub fn parse(allocator: *std.mem.Allocator, str: [:0]const u8) !?TypeDesc {
+    pub fn parse(allocator: std.mem.Allocator, str: [:0]const u8) !?TypeDesc {
         var parser = Parser{
             .allocator = allocator,
             .toks = std.zig.Tokenizer.init(str),
@@ -399,7 +399,7 @@ const TypeDesc = union(enum) {
     }
 
     const Parser = struct {
-        allocator: *std.mem.Allocator,
+        allocator: std.mem.Allocator,
         toks: std.zig.Tokenizer,
         peeked: ?std.zig.Token = null,
         peeked2: ?std.zig.Token = null,

@@ -1,9 +1,9 @@
 const std = @import("std");
 const mods = @import("mods.zig");
 
-var allocator: *std.mem.Allocator = undefined;
+var allocator: std.mem.Allocator = undefined;
 
-fn trigger_i(ev_name: []const u8, data: ?*c_void) void {
+fn trigger_i(ev_name: []const u8, data: ?*anyopaque) void {
     var it = mods.iterator();
     while (it.next()) |mod| {
         if (mod[1].event_handlers.get(ev_name)) |handlers| {
@@ -17,7 +17,7 @@ fn trigger_i(ev_name: []const u8, data: ?*c_void) void {
     }
 }
 
-pub fn trigger(mod: ?[]const u8, name: []const u8, data: ?*c_void) void {
+pub fn trigger(mod: ?[]const u8, name: []const u8, data: ?*anyopaque) void {
     if (mod) |m| {
         const ev_name = allocator.alloc(u8, name.len + m.len + 1) catch unreachable; // TODO
         defer allocator.free(ev_name);

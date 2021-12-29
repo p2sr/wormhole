@@ -16,8 +16,8 @@ pub const Mod = struct {
     };
 
     pub const EventHandler = struct {
-        _cbk: fn (data: ?*c_void) callconv(.C) void,
-        pub fn call(self: EventHandler, mod: []const u8, data: ?*c_void) void {
+        _cbk: fn (data: ?*anyopaque) callconv(.C) void,
+        pub fn call(self: EventHandler, mod: []const u8, data: ?*anyopaque) void {
             api.callExternal(mod, self._cbk, .{data});
         }
     };
@@ -32,7 +32,7 @@ pub const Mod = struct {
 };
 
 var mods: std.StringHashMap(Mod) = undefined;
-var allocator: *std.mem.Allocator = undefined;
+var allocator: std.mem.Allocator = undefined;
 
 pub fn getMod(name: []const u8) ?Mod {
     return mods.get(name);
@@ -54,7 +54,7 @@ pub fn iterator() Iterator {
     return .{ .it = mods.iterator() };
 }
 
-pub fn init(allocator1: *std.mem.Allocator) !void {
+pub fn init(allocator1: std.mem.Allocator) !void {
     allocator = allocator1;
 
     var mod_list = std.ArrayList(Mod).init(allocator);
@@ -111,7 +111,7 @@ const ModInfoRaw = extern struct {
 
     const EventHandler = extern struct {
         name: ?[*:0]const u8,
-        cbk: ?fn (data: ?*c_void) callconv(.C) void,
+        cbk: ?fn (data: ?*anyopaque) callconv(.C) void,
     };
 
     name: ?[*:0]const u8,
@@ -151,13 +151,13 @@ fn loadMod(path: []const u8) !Mod {
         return error.BadModName;
     }
 
-    var dep_list = std.ArrayList(ModSpec).init(&arena.allocator);
+    var dep_list = std.ArrayList(ModSpec).init(arena.allocator());
 
     for (std.mem.span(info_raw.deps) orelse return error.BadModDeps) |dep_str| {
         try dep_list.append(try parseDep(std.mem.span(dep_str orelse unreachable)));
     }
 
-    var thud_components = std.StringHashMap(Mod.THudComponent).init(&arena.allocator);
+    var thud_components = std.StringHashMap(Mod.THudComponent).init(arena.allocator());
 
     if (info_raw.thud_components) |raw| {
         var i: usize = 0;
@@ -210,12 +210,12 @@ fn loadMod(path: []const u8) !Mod {
 
     // Move them into a more efficient representation where each slice
     // is actually the right length
-    var event_handlers = std.StringHashMap([]Mod.EventHandler).init(&arena.allocator);
+    var event_handlers = std.StringHashMap([]Mod.EventHandler).init(arena.allocator());
 
     {
         var it = event_handlers_al.iterator();
         while (it.next()) |kv| {
-            const ptr = try arena.allocator.alloc(Mod.EventHandler, kv.value_ptr.items.len);
+            const ptr = try arena.allocator().alloc(Mod.EventHandler, kv.value_ptr.items.len);
             std.mem.copy(Mod.EventHandler, ptr, kv.value_ptr.items);
             kv.value_ptr.clearAndFree();
             try event_handlers.put(kv.key_ptr.*, ptr);

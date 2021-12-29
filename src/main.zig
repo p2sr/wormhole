@@ -20,18 +20,18 @@ fn init() !void {
 
     try tier0.init();
 
-    try interface.init(&gpa.allocator);
+    try interface.init(gpa.allocator());
     errdefer interface.deinit();
 
-    surface.init(&gpa.allocator);
+    surface.init(gpa.allocator());
 
-    font_manager.init(&gpa.allocator);
+    font_manager.init(gpa.allocator());
     errdefer font_manager.deinit();
 
-    try mods.init(&gpa.allocator);
+    try mods.init(gpa.allocator());
     errdefer mods.deinit();
 
-    try thud.init(&gpa.allocator);
+    try thud.init(gpa.allocator());
     errdefer thud.deinit();
 
     font_manager.listFonts();
@@ -172,10 +172,10 @@ var callbacks = sdk.IServerPluginCallbacks{
 };
 
 // The function we expose to the game!
-export fn CreateInterface(name: [*:0]u8, ret: ?*c_int) ?*c_void {
+export fn CreateInterface(name: [*:0]u8, ret: ?*c_int) ?*anyopaque {
     if (!std.mem.eql(u8, std.mem.span(name), "ISERVERPLUGINCALLBACKS003")) {
         if (ret) |r| r.* = 0;
-        return @ptrCast(*c_void, &callbacks);
+        return @ptrCast(*anyopaque, &callbacks);
     }
 
     if (ret) |r| r.* = 1;

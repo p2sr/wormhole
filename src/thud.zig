@@ -106,7 +106,7 @@ pub const THud = struct {
 
 fn Parser(comptime Reader: type) type {
     return struct {
-        allocator: *std.mem.Allocator,
+        allocator: std.mem.Allocator,
         reader: Reader,
         peeked: ?u8 = null,
 
@@ -244,14 +244,14 @@ fn Parser(comptime Reader: type) type {
     };
 }
 
-fn parser(allocator1: *std.mem.Allocator, r: anytype) Parser(@TypeOf(r)) {
+fn parser(allocator1: std.mem.Allocator, r: anytype) Parser(@TypeOf(r)) {
     return .{ .allocator = allocator1, .reader = r };
 }
 
 var thuds: []hud.Hud(THud) = undefined;
-var allocator: *std.mem.Allocator = undefined;
+var allocator: std.mem.Allocator = undefined;
 
-pub fn init(allocator1: *std.mem.Allocator) !void {
+pub fn init(allocator1: std.mem.Allocator) !void {
     @setEvalBranchQuota(10000);
 
     allocator = allocator1;
@@ -275,7 +275,7 @@ pub fn init(allocator1: *std.mem.Allocator) !void {
     var file_contents = try std.fs.cwd().readFileAlloc(allocator, "thud.json", std.math.maxInt(usize));
     defer allocator.free(file_contents);
 
-    const cfg = try std.json.parse([]RawInfo, &std.json.TokenStream.init(file_contents), .{ .allocator = &parse_arena.allocator });
+    const cfg = try std.json.parse([]RawInfo, &std.json.TokenStream.init(file_contents), .{ .allocator = parse_arena.allocator() });
 
     var huds = std.ArrayList(hud.Hud(THud)).init(allocator);
     defer {
@@ -287,11 +287,11 @@ pub fn init(allocator1: *std.mem.Allocator) !void {
         var arena = std.heap.ArenaAllocator.init(allocator);
         errdefer arena.deinit();
 
-        var lines = std.ArrayList(THud.Line).init(&arena.allocator);
+        var lines = std.ArrayList(THud.Line).init(arena.allocator());
 
         for (raw.lines) |line| {
             var s = std.io.fixedBufferStream(line);
-            const parts = try parser(&arena.allocator, s.reader()).parse();
+            const parts = try parser(arena.allocator(), s.reader()).parse();
 
             try lines.append(.{
                 .color = .{
@@ -304,7 +304,7 @@ pub fn init(allocator1: *std.mem.Allocator) !void {
             });
         }
 
-        const name = try arena.allocator.dupeZ(u8, raw.font_name);
+        const name = try arena.allocator().dupeZ(u8, raw.font_name);
 
         try huds.append(.{
             .ctx = .{

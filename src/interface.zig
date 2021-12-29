@@ -23,19 +23,19 @@ const locations = .{
     .IServerTools = "server:VSERVERTOOLS001",
 };
 
-var allocator: *std.mem.Allocator = undefined;
+var allocator: std.mem.Allocator = undefined;
 
 const VtableEntry = ?*const opaque {};
 var hooked_tables: std.ArrayList([]VtableEntry) = undefined;
 
-pub fn init(allocator1: *std.mem.Allocator) !void {
+pub fn init(allocator1: std.mem.Allocator) !void {
     allocator = allocator1;
 
     hooked_tables = @TypeOf(hooked_tables).init(allocator);
     errdefer hooked_tables.deinit();
 
     inline for (comptime getDescs()) |desc| {
-        const library = if (std.mem.eql(u8, desc.module, "tier1"))
+        var library = if (std.mem.eql(u8, desc.module, "tier1"))
             switch (@import("builtin").os.tag) {
                 .windows => "vstdlib.dll",
                 .linux => "libvstdlib.so",
@@ -50,6 +50,8 @@ pub fn init(allocator1: *std.mem.Allocator) !void {
                 else => @compileError("Unsupported OS"),
             };
 
+        log.info("Opening {s}\n", .{library});
+        if (std.mem.eql(u8, library, "server.so")) library = "portal2/bin/linux32/server.so";
         var lib = try std.DynLib.open(library);
 
         const createInterface = lib.lookup(sdk.CreateInterfaceFn, "CreateInterface") orelse return error.SymbolNotFound;
@@ -61,7 +63,6 @@ pub fn init(allocator1: *std.mem.Allocator) !void {
 
         @field(orig_internal, desc.name) = iface.*.vtable;
         const new_vtable = try copyVtable(@TypeOf(iface.*.vtable.*), iface.*.vtable);
-        _ = allocator;
 
         inline for (std.meta.declarations(desc.hooks)) |decl| {
             switch (decl.data) {

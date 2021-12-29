@@ -16,7 +16,7 @@ pub fn callExternal(mod: []const u8, func: anytype, args: anytype) @typeInfo(@Ty
     return @call(.{}, func, args);
 }
 
-export fn wh_trigger_event(name: [*:0]const u8, data: ?*c_void) void {
+export fn wh_trigger_event(name: [*:0]const u8, data: ?*anyopaque) void {
     if (active_mod) |m|
         event.trigger(m, std.mem.span(name), data)
     else

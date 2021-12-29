@@ -8,7 +8,7 @@ getPlayerFov	GetPlayerFOV	fn (client_player: *sdk.IClientEntity) c_int
 isInNoClipMode	IsInNoClipMode	fn (client_player: *sdk.IClientEntity) bool
 
 firstEntity	FirstEntity	fn () ?*c_void
-nextEntity	nextEntity	fn (ent: ?*c_void) ?*c_void
+nextEntity	NextEntity	fn (ent: ?*c_void) ?*c_void
 findEntityByHammerId	FindEntityByHammerID	fn (hammer_id: c_int) ?*c_void
 
 getKeyValue	GetKeyValue	fn (ent: *c_void, field: [*:0]const u8, val: [*]u8, max_len: c_int) bool

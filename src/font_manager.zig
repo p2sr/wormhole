@@ -24,7 +24,7 @@ const FontMap = std.HashMap(FontRecord, sdk.HFont, FontRecord.HashCtx, std.hash_
 var font_map: FontMap = undefined;
 var handle_pool: std.ArrayList(sdk.HFont) = undefined;
 
-pub fn init(allocator: *std.mem.Allocator) void {
+pub fn init(allocator: std.mem.Allocator) void {
     font_map = FontMap.init(allocator);
     handle_pool = std.ArrayList(sdk.HFont).init(allocator);
 }
@@ -101,14 +101,14 @@ const LOGFONT = extern struct {
 };
 
 const HDC = ?*opaque {};
-const FONTENUMPROCA = fn (*const LOGFONT, *const TEXTMETRIC, u32, ?*c_void) callconv(.Stdcall) c_int;
+const FONTENUMPROCA = fn (*const LOGFONT, *const TEXTMETRIC, u32, ?*anyopaque) callconv(.Stdcall) c_int;
 const TEXTMETRIC = opaque {}; // don't care
 const WND = opaque {};
-extern "gdi32" fn EnumFontFamiliesExA(hfc: HDC, logfont: *LOGFONT, proc: FONTENUMPROCA, param: ?*c_void, flags: u32) callconv(.Stdcall) c_int;
+extern "gdi32" fn EnumFontFamiliesExA(hfc: HDC, logfont: *LOGFONT, proc: FONTENUMPROCA, param: ?*anyopaque, flags: u32) callconv(.Stdcall) c_int;
 extern "gdi32" fn GetDC(wnd: ?*WND) callconv(.Stdcall) HDC;
 extern "gdi32" fn ReleaseDC(wnd: ?*WND, hdc: HDC) callconv(.Stdcall) c_int;
 
-fn windowsEnumFontCbk(lf: *const LOGFONT, tm: *const TEXTMETRIC, font_type: u32, param: ?*c_void) callconv(.Stdcall) c_int {
+fn windowsEnumFontCbk(lf: *const LOGFONT, tm: *const TEXTMETRIC, font_type: u32, param: ?*anyopaque) callconv(.Stdcall) c_int {
     _ = tm;
     _ = font_type;
     _ = param;
