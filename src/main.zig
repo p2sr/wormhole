@@ -60,8 +60,8 @@ fn load(_: *sdk.IServerPluginCallbacks, interfaceFactory: sdk.CreateInterfaceFn,
     _ = interfaceFactory;
     _ = gameServerFactory;
 
-    init() catch |err| if (tier0.ready) {
-        log.err("Error initializing Wormhole: {s}\n", .{@errorName(err)});
+    init() catch |err| {
+        if (tier0.ready) log.err("Error initializing Wormhole: {s}\n", .{@errorName(err)});
         return false;
     };
 
