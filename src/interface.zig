@@ -64,14 +64,10 @@ pub fn init(allocator1: std.mem.Allocator) !void {
         @field(orig_internal, desc.name) = iface.*.vtable;
         const new_vtable = try copyVtable(@TypeOf(iface.*.vtable.*), iface.*.vtable);
 
-        inline for (std.meta.declarations(desc.hooks)) |decl| {
-            switch (decl.data) {
-                .Fn => {
-                    const hooked = @field(desc.hooks, decl.name);
-                    @field(new_vtable.*, decl.name) = hooked;
-                },
-                else => void,
-            }
+        inline for (@typeInfo(desc.hooks).Struct.decls) |decl| {
+            const hooked = @field(desc.hooks, decl.name);
+            // TODO: assert type
+            @field(new_vtable.*, decl.name) = hooked;
         }
 
         iface.*.vtable = new_vtable;
