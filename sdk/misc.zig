@@ -157,3 +157,4 @@ pub const CEntityRespawnInfo = extern struct {
     hammer_id: c_int,
     ent_text: [*:0]const u8,
 };
+pub const CGlobalVars = opaque {};

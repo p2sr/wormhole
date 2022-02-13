@@ -21,6 +21,7 @@ const locations = .{
     .ISurface = "vguimatsurface:VGUI_Surface031",
     .IVEngineClient = "engine:VEngineClient015",
     .IServerTools = "server:VSERVERTOOLS001",
+    .IServerGameDLL = "server:ServerGameDLL005",
 };
 
 var allocator: std.mem.Allocator = undefined;

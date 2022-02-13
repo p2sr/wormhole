@@ -1,6 +1,7 @@
 const std = @import("std");
 const sdk = @import("sdk");
 const log = @import("log.zig");
+const event = @import("event.zig");
 const ifaces = @import("interface.zig").ifaces;
 const orig = @import("interface.zig").orig;
 
@@ -29,7 +30,7 @@ IEngineVGui: struct {
         const offsets = switch (@import("builtin").os.tag) {
             .linux => .{
                 .startDrawing = 85,
-                .finishDrawing = 205,
+                .finishDrawing = 204,
             },
             .windows => .{
                 .startDrawing = 22,
@@ -64,6 +65,16 @@ IEngineVGui: struct {
 
         finishDrawing(ifaces.ISurface);
 
+        return ret;
+    }
+},
+
+IServerGameDLL: struct {
+    pub fn gameFrame(self: *sdk.IServerGameDLL, simulating: bool) callconv(Method) void {
+        var sim1 = simulating;
+        event.trigger(null, "pre_tick", &sim1);
+        var ret = orig.IServerGameDLL.gameFrame(self, simulating);
+        event.trigger(null, "post_tick", &sim1);
         return ret;
     }
 },

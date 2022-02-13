@@ -1,0 +1,14 @@
+dllInit	DLLInit	fn (engine_factory: sdk.CreateInterfaceFn, physics_factory: sdk.CreateInterfaceFn, file_system_factory: sdk.CreateInterfaceFn, globals: *sdk.CGlobalVars) bool
+gameInit	GameInit	fn () bool
+levelInit	LevelInit	fn (map_name: [*:0]const u8, map_entities: [*:0]const u8, old_level: ?[*:0]const u8, landmark_name: ?[*:0]const u8, load_game: bool, background: bool) bool
+serverActivate	ServerActivate	fn (edict_list: [*]sdk.Edict, edict_count: c_int, client_max: c_int) void
+gameFrame	GameFrame	fn (simulating: bool) void
+preClientUpdate	PreClientUpdate	fn (simulating: bool) void
+levelShutdown	LevelShutdown	fn () void
+gameShutdown	GameShutdown	fn () void
+dllShutdown	DLLShutdown	fn () void
+getTickInterval	GetTickInterval	fn () f32
+getAllServerClasses	GetAllServerClasses	fn () *sdk.ServerClass
+getGameDescription	GetGameDescription	fn () [*:0]const u8
+createNetworkStringTables	CreateNetworkStringTables	fn () void
+# TODO: incomplete
