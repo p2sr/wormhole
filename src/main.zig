@@ -18,6 +18,10 @@ fn init() !void {
     gpa = .{};
     errdefer std.debug.assert(!gpa.deinit());
 
+    const version = @import("version.zig").getVersion();
+    if (version == null) return error.UnknownEngineBuild;
+    // TODO: load offsets etc
+
     try tier0.init();
 
     try interface.init(gpa.allocator());
