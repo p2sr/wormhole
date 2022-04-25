@@ -13,15 +13,3 @@ pub fn getEntity(idx: usize) ?*ServerEntity {
 
     return ent;
 }
-
-pub fn outputThing() void {
-    const player = getEntity(1);
-    if (player) |p| {
-        log.info("player at {}\n", .{player});
-        const ptr = @ptrToInt(p);
-        const beams = @intToPtr(*c_int, ptr + 5084 + 396).*;
-        log.info("Player has tractor beam count {}\n", .{beams});
-    } else {
-        log.info("No player\n", .{});
-    }
-}
