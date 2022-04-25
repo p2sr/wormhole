@@ -2,14 +2,16 @@ const std = @import("std");
 const classgen = @import("classgen.zig");
 
 pub fn build(b: *std.build.Builder) void {
-    const mode = std.builtin.Mode.ReleaseFast; // ziglang/zig#7935
     const target = b.standardTargetOptions(.{
         .default_target = std.zig.CrossTarget.parse(.{
             .arch_os_abi = "i386-native-gnu",
         }) catch unreachable,
     });
 
+    const mode = b.standardReleaseOptions();
+
     const lib = b.addSharedLibrary("wormhole", "src/main.zig", .unversioned);
+    lib.link_z_notext = true; // ziglang/zig#7935
     lib.addPackage(classgen.pkg(b, "sdk", "sdk"));
     lib.setBuildMode(mode);
     lib.setTarget(target);
