@@ -15,10 +15,6 @@ fn writeFn(ctx: Context, bytes: []const u8) error{}!usize {
     return bytes.len;
 }
 
-fn mkWriter(ctx: Context) std.io.Writer(Context, void, writeFn) {
-    return std.io.Writer(Context, void, writeFn){ .context = ctx };
-}
-
 // TODO: write info to a log file
 fn write(ctx: Context, comptime fmt: []const u8, args: anytype) void {
     std.fmt.format(
