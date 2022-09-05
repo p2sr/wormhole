@@ -60,7 +60,7 @@ pub fn init(allocator1: std.mem.Allocator) !void {
     var mod_list = std.ArrayList(Mod).init(allocator);
     defer mod_list.deinit();
 
-    var dir = std.fs.cwd().openDir("mods", .{ .iterate = true }) catch |err| switch (err) {
+    var dir = std.fs.cwd().openIterableDir("mods", .{}) catch |err| switch (err) {
         error.FileNotFound, error.NotDir => {
             log.info("mods directory not found; not loading any mods\n", .{});
             return;

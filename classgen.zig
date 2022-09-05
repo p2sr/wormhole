@@ -6,14 +6,14 @@ pub fn pkg(b: *std.build.Builder, pkg_name: []const u8, dir: []const u8) std.bui
     // Create main pkg
     var main_pkg = std.build.Pkg{
         .name = pkg_name,
-        .path = .{ .generated = &step.out_file },
+        .source = .{ .generated = &step.out_file },
     };
 
     // Create internal pkg
     const internal_main = std.fs.path.join(b.allocator, &.{ dir, "main.zig" }) catch unreachable;
     const internal_pkg = std.build.Pkg{
         .name = "classgen_internal",
-        .path = .{ .path = internal_main },
+        .source = .{ .path = internal_main },
         .dependencies = b.allocator.dupe(std.build.Pkg, &.{main_pkg}) catch unreachable,
     };
 
@@ -45,7 +45,7 @@ const ClassGenStep = struct {
         const self = @fieldParentPtr(ClassGenStep, "step", step);
 
         var gen = try ClassGenerator.init(self.b.allocator);
-        const dir = try std.fs.cwd().openDir(self.dir, .{ .iterate = true });
+        const dir = try std.fs.cwd().openIterableDir(self.dir, .{});
         var it = dir.iterate();
         while (try it.next()) |entry| {
             if (entry.kind != .File) continue;
@@ -53,7 +53,7 @@ const ClassGenStep = struct {
             if (std.mem.endsWith(u8, entry.name, ".zig")) {
                 try gen.zigImport("classgen_internal");
             } else {
-                gen.classFromFilename(dir, entry.name) catch |err| switch (err) {
+                gen.classFromFilename(dir.dir, entry.name) catch |err| switch (err) {
                     error.InvalidFormat => std.os.exit(1),
                     else => |e| return e,
                 };
