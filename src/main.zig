@@ -170,7 +170,7 @@ var callbacks = sdk.IServerPluginCallbacks{
     .vtable = &blk: {
         var vt: sdk.IServerPluginCallbacks.Vtable = undefined;
         for (std.meta.fieldNames(@TypeOf(vt))) |name| {
-            @field(vt, name) = @field(@This(), name);
+            @field(vt, name) = &@field(@This(), name);
         }
         break :blk vt;
     },

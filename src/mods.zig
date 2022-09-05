@@ -9,14 +9,14 @@ const ModSpec = struct {
 
 pub const Mod = struct {
     pub const THudComponent = struct {
-        _cbk: fn (slot: u8, fmt: [*:0]const u8, buf: [*]u8, size: usize) callconv(.C) usize,
+        _cbk: *fn (slot: u8, fmt: [*:0]const u8, buf: [*]u8, size: usize) callconv(.C) usize,
         pub fn call(self: THudComponent, mod: []const u8, slot: u8, fmt: [*:0]const u8, buf: [*]u8, size: usize) usize {
             return api.callExternal(mod, self._cbk, .{ slot, fmt, buf, size });
         }
     };
 
     pub const EventHandler = struct {
-        _cbk: fn (data: ?*anyopaque) callconv(.C) void,
+        _cbk: *fn (data: ?*anyopaque) callconv(.C) void,
         pub fn call(self: EventHandler, mod: []const u8, data: ?*anyopaque) void {
             api.callExternal(mod, self._cbk, .{data});
         }
@@ -106,12 +106,12 @@ pub fn deinit() void {
 const ModInfoRaw = extern struct {
     const THudComponent = extern struct {
         name: ?[*:0]const u8,
-        cbk: ?fn (slot: u8, fmt: [*:0]const u8, buf: [*]u8, size: usize) callconv(.C) usize,
+        cbk: ?*fn (slot: u8, fmt: [*:0]const u8, buf: [*]u8, size: usize) callconv(.C) usize,
     };
 
     const EventHandler = extern struct {
         name: ?[*:0]const u8,
-        cbk: ?fn (data: ?*anyopaque) callconv(.C) void,
+        cbk: ?*fn (data: ?*anyopaque) callconv(.C) void,
     };
 
     name: ?[*:0]const u8,

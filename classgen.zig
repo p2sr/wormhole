@@ -259,7 +259,7 @@ const ClassGenerator = struct {
         sig: TypeDesc.Fn,
         call_conv: std.builtin.CallingConvention,
     ) !void {
-        try self.print("{}: fn (*{}", .{ std.zig.fmtId(name), std.zig.fmtId(class_name) });
+        try self.print("{}: *const fn (*{}", .{ std.zig.fmtId(name), std.zig.fmtId(class_name) });
         for (sig.args) |arg| {
             try self.print(", {}", .{arg});
         }
@@ -370,7 +370,7 @@ const TypeDesc = union(enum) {
             },
 
             .func => |func| {
-                try writer.writeAll("fn (");
+                try writer.writeAll("*const fn (");
                 for (func.args) |arg, i| {
                     if (i > 0) try writer.writeAll(", ");
                     try writer.print("{}", .{arg});

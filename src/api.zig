@@ -7,7 +7,7 @@ const event = @import("event.zig");
 // for any callback etc).
 var active_mod: ?[]const u8 = null;
 
-pub fn callExternal(mod: []const u8, func: anytype, args: anytype) @typeInfo(@TypeOf(func)).Fn.return_type.? {
+pub fn callExternal(mod: []const u8, func: anytype, args: anytype) @typeInfo(std.meta.Child(@TypeOf(func))).Fn.return_type.? {
     const old_mod = active_mod;
     defer active_mod = old_mod;
 

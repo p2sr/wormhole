@@ -42,8 +42,8 @@ IEngineVGui: struct {
             },
             else => @compileError("OS not supported"),
         };
-        const startDrawing = readFuncPtr(fn (*sdk.ISurface) callconv(Method) void, orig.ISurface.precacheFontCharacters, offsets.startDrawing);
-        const finishDrawing = readFuncPtr(fn (*sdk.ISurface) callconv(Method) void, orig.ISurface.precacheFontCharacters, offsets.finishDrawing);
+        const startDrawing = readFuncPtr(*const fn (*sdk.ISurface) callconv(Method) void, orig.ISurface.precacheFontCharacters, offsets.startDrawing);
+        const finishDrawing = readFuncPtr(*const fn (*sdk.ISurface) callconv(Method) void, orig.ISurface.precacheFontCharacters, offsets.finishDrawing);
 
         startDrawing(ifaces.ISurface);
 

@@ -5,7 +5,7 @@ fn findModule(comptime module_name: []const u8) ?[]const u8 {
     var mem: ?[]const u8 = null;
 
     switch (@import("builtin").os.tag) {
-        .linux => std.os.dl_iterate_phdr(&mem, error{}, struct {
+        .linux => std.os.dl_iterate_phdr(&mem, anyerror, struct {
             fn cb(info: *std.os.dl_phdr_info, size: usize, ctx: *?[]const u8) error{}!void {
                 _ = size;
                 if (std.mem.endsWith(u8, std.mem.span(info.dlpi_name).?, "/" ++ module_name ++ ".so")) {
@@ -13,7 +13,7 @@ fn findModule(comptime module_name: []const u8) ?[]const u8 {
                     ctx.* = @intToPtr([*]const u8, base)[0..info.dlpi_phdr[0].p_memsz];
                 }
             }
-        }.cb) catch |err| switch (err) {},
+        }.cb) catch unreachable,
         .windows => {
             // Fucking hell Microsoft, why is this so hard
             const windows = std.os.windows;

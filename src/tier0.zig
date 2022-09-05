@@ -17,10 +17,10 @@ pub fn init() !void {
     log.devInfo("Initialized tier0\n", .{});
 }
 
-const FmtFn = fn (fmt: [*:0]const u8, ...) callconv(.C) void;
+const FmtFn = *const fn (fmt: [*:0]const u8, ...) callconv(.C) void;
 pub var msg: FmtFn = undefined;
 pub var warning: FmtFn = undefined;
-pub var colorMsg: fn (color: *const sdk.Color, fmt: [*:0]const u8, ...) callconv(.C) void = undefined;
+pub var colorMsg: *const fn (color: *const sdk.Color, fmt: [*:0]const u8, ...) callconv(.C) void = undefined;
 pub var devMsg: FmtFn = undefined;
 pub var devWarning: FmtFn = undefined;
 pub var ready: bool = false;

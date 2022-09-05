@@ -275,7 +275,8 @@ pub fn init(allocator1: std.mem.Allocator) !void {
     var file_contents = try std.fs.cwd().readFileAlloc(allocator, "thud.json", std.math.maxInt(usize));
     defer allocator.free(file_contents);
 
-    const cfg = try std.json.parse([]RawInfo, &std.json.TokenStream.init(file_contents), .{ .allocator = parse_arena.allocator() });
+    var ts = std.json.TokenStream.init(file_contents);
+    const cfg = try std.json.parse([]RawInfo, &ts, .{ .allocator = parse_arena.allocator() });
 
     var huds = std.ArrayList(hud.Hud(THud)).init(allocator);
     defer {
@@ -291,7 +292,8 @@ pub fn init(allocator1: std.mem.Allocator) !void {
 
         for (raw.lines) |line| {
             var s = std.io.fixedBufferStream(line);
-            const parts = try parser(arena.allocator(), s.reader()).parse();
+            var p = parser(arena.allocator(), s.reader());
+            const parts = try p.parse();
 
             try lines.append(.{
                 .color = .{
