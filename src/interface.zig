@@ -15,6 +15,7 @@ const locations = .{
     .IVEngineClient = "engine:VEngineClient015",
     .IServerTools = "server:VSERVERTOOLS001",
     .IServerGameDLL = "server:ServerGameDLL005",
+    .IMaterialSystem = "materialsystem:VMaterialSystem080",
 };
 
 var allocator: std.mem.Allocator = undefined;

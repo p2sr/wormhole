@@ -110,7 +110,6 @@ pub const Vector2D = extern struct {
 };
 pub const FontCharRenderInfo = opaque {};
 pub const IVguiMatInfo = opaque {};
-pub const ImageFormat = c_int; // TODO: this is really an enum but it's fucking huge
 pub const IImage = opaque {};
 pub const DrawTexturedRectParms = extern struct {
     x0: c_int,
@@ -159,3 +158,22 @@ pub const CEntityRespawnInfo = extern struct {
     ent_text: [*:0]const u8,
 };
 pub const CGlobalVars = opaque {};
+pub const ImageFormat = enum(c_int) {
+    default = -2,
+    unkown = -1,
+    rgba8888 = 0,
+    abgr8888,
+    rgb888,
+    bgr888,
+    rgb565,
+    i8,
+    ia88,
+    p8,
+    a8,
+    rgb888_bluescreen,
+    bgr888_bluescreen,
+    argb8888,
+    bgra8888,
+    // TODO: more
+};
+pub const ITexture = opaque {};
