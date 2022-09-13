@@ -1,0 +1,14 @@
+NAME IVertexBuffer
+
+VMETHODS
+
+vertexCount: fn () c_int
+vertexFormat: fn () sdk.VertexFormat
+isDynamic: fn () bool
+beginCastBuffer: fn (fmt: sdk.VertexFormat) void
+endCastBuffer: fn () void
+getRoomRemaining: fn () c_int
+lock: fn (max_verts: c_int, append: bool, desc: *sdk.VertexDesc) bool
+unlock: fn (vert_count: c_int, desc: *sdk.VertexDesc) void
+spew: fn (vert_count: c_int, desc: *const sdk.VertexDesc) void
+validateData: fn (vert_count: c_int, desc: *const sdk.VertexDesc) void

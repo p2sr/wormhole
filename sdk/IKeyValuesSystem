@@ -1,0 +1,14 @@
+NAME IKeyValuesSystem
+
+VMETHODS
+
+registerSizeofKeyValues: fn (size: c_uint) void
+allocKeyValuesMemory: fn (size: c_uint) ?sdk.PtrAlign16
+freeKeyValuesMemory: fn (mem: *anyopaque) void
+getSymbolForString: fn (name: [*:0]const u8, create: bool) c_uint
+getStringForSymbol: fn (symbol: c_uint) ?[*:0]const u8
+addKeyValuesToMemoryLeakList: fn (mem: *anyopaque, name: c_uint) void
+removeKeyValuesFromMemoryLeakList: fn (mem: *anyopaque) void
+setKeyValuesExpressionSymbol: fn (name: [*:0]const u8, val: bool) void
+getKeyValuesExpressionSymbol: fn (name: [*:0]const u8) bool
+getSymbolForStringCaseSensitive: fn (case_insens_symbol: *c_uint, name: [*:0]const u8, create: bool) c_uint

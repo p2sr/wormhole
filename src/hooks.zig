@@ -22,45 +22,9 @@ IEngineVGuiInternal: struct {
     pub fn paint(self: *sdk.IEngineVGuiInternal, mode: sdk.PaintMode) callconv(Method) void {
         var ret = orig.IEngineVGuiInternal.paint(self, mode);
 
-        // TODO: proper system for getting non-exposed shit, cuz this is
-        // gross
-        const offsets = switch (@import("builtin").os.tag) {
-            .linux => .{
-                .startDrawing = 85,
-                .finishDrawing = 204,
-            },
-            .windows => .{
-                .startDrawing = 22,
-                .finishDrawing = 117,
-            },
-            .macos => .{
-                .startDrawing = 59,
-                .finishDrawing = 217,
-            },
-            else => @compileError("OS not supported"),
-        };
-        const startDrawing = readFuncPtr(*const fn (*sdk.ISurface) callconv(Method) void, orig.ISurface.precacheFontCharacters, offsets.startDrawing);
-        const finishDrawing = readFuncPtr(*const fn (*sdk.ISurface) callconv(Method) void, orig.ISurface.precacheFontCharacters, offsets.finishDrawing);
-
-        startDrawing(ifaces.ISurface);
-
         if (mode.ui_panels) {
             @import("thud.zig").drawAll(0);
-            //const str = "Hello from Wormhole!";
-
-            // Seriously Valve, what the fuck is with the wchar strings?
-            //var wstr: [str.len]sdk.wchar = undefined;
-            //for (str) |c, i| {
-            //    wstr[i] = @intCast(sdk.wchar, c);
-            //}
-
-            //ifaces.ISurface.drawSetTextPos(100, 100);
-            //ifaces.ISurface.drawSetTextColor(sdk.Color{ .r = 0xCC, .g = 0x22, .b = 0xFF });
-            //ifaces.ISurface.drawSetTextFont(13);
-            //ifaces.ISurface.drawPrintText(&wstr, wstr.len, sdk.FontDrawType.default);
         }
-
-        finishDrawing(ifaces.ISurface);
 
         return ret;
     }

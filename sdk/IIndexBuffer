@@ -1,0 +1,17 @@
+NAME IIndexBuffer
+
+VMETHODS
+
+indexCount: fn () c_int
+indexFormat: fn () sdk.MaterialIndexFormat
+isDynamic: fn () bool
+beginCastBuffer: fn (fmt: sdk.MaterialIndexFormat) void
+endCastBuffer: fn () void
+getRoomRemaining: fn () c_int
+lock: fn (max_indices: c_int, append: bool, desc: *sdk.VertexDesc) bool
+unlock: fn (index_count: c_int, desc: *sdk.IndexDesc) void
+modifyBegin: fn (read_only: bool, first_index: c_int, index_count: c_int, desc: *sdk.IndexDesc) void
+modifyEnd: fn (desc: *sdk.IndexDesc) void
+spew: fn (index_count: c_int, desc: *const sdk.IndexDesc) void
+validateData: fn (index_count: c_int, desc: *const sdk.IndexDesc) void
+getMesh: fn () *IMesh

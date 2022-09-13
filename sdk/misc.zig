@@ -45,7 +45,7 @@ pub const InputEvent = opaque {};
 pub const PaintMode = packed struct(c_int) {
     ui_panels: bool,
     in_game_panels: bool,
-    _pad: u30,
+    _unused: u30,
 };
 pub const LevelLoadingProgress = enum(c_int) {
     none,
@@ -79,6 +79,12 @@ pub const IntRect = extern struct {
     y0: c_int,
     x1: c_int,
     y1: c_int,
+};
+pub const Rect = extern struct {
+    x: c_int,
+    y: c_int,
+    w: c_int,
+    h: c_int,
 };
 pub const QueryCvarCookie = c_int;
 pub const QueryCvarValueStatus = enum(c_int) {
@@ -150,7 +156,6 @@ pub const VPlane = struct {
     normal: Vector3D,
     dist: f32,
 };
-pub const IMaterial = opaque {};
 pub const IClientEntity = opaque {};
 pub const IServerEntity = opaque {};
 pub const CEntityRespawnInfo = extern struct {
@@ -176,4 +181,131 @@ pub const ImageFormat = enum(c_int) {
     bgra8888,
     // TODO: more
 };
-pub const ITexture = opaque {};
+pub const TextureFlags = packed struct(c_int) {
+    point_sample: bool = false,
+    trilinear: bool = false,
+    clamp_s: bool = false,
+    clamp_t: bool = false,
+    anisotropic: bool = false,
+    hint_dxt5: bool = false,
+    pwl_corrected: bool = false,
+    normal: bool = false,
+    no_mip: bool = false,
+    no_lod: bool = false,
+    all_mips: bool = false,
+    procedural: bool = false,
+    one_bit_alpha: bool = false,
+    eight_bit_alpha: bool = false,
+    env_map: bool = false,
+    render_target: bool = false,
+    depth_render_target: bool = false,
+    no_debug_override: bool = false,
+    single_copy: bool = false,
+    srgb: bool = false,
+    default_pool: bool = false,
+    _unused1: u2 = 0,
+    no_depth_buffer: bool = false,
+    _unused2: u1 = 0,
+    clampu: bool = false,
+    vertex_texture: bool = false,
+    ssbump: bool = false,
+    most_mips: bool = false,
+    border: bool = false,
+    _unused3: u2 = 0,
+};
+pub const MaterialRenderTargetDepth = c_int;
+pub const ITextureRegenerator = opaque {};
+
+pub const VertexCompressionType = enum(c_uint) {
+    invalid = 0xFFFFFFFF,
+    none = 0,
+    on = 1,
+};
+pub const VertexDesc = extern struct {
+    size: extern struct {
+        position: c_int,
+        bone_weight: c_int,
+        bone_matrix_index: c_int,
+        normal: c_int,
+        color: c_int,
+        specular: c_int,
+        tex_coord: [8]c_int,
+        tangent_s: c_int,
+        tangent_t: c_int,
+        wrinkle: c_int,
+        user_data: c_int,
+    },
+
+    actual_size: c_int,
+    compression_type: VertexCompressionType,
+    num_bone_weights: c_int,
+
+    data: extern struct {
+        position: ?[*]f32,
+        bone_weight: ?[*]f32,
+        bone_matrix_index: ?[*]u8,
+        normal: ?[*]f32,
+        color: ?[*]u8,
+        specular: ?[*]u8,
+        tex_coord: [8]?[*]f32,
+        tangent_s: ?[*]f32,
+        tangent_t: ?[*]f32,
+        wrinkle: ?[*]f32,
+        user_data: ?[*]f32,
+    },
+
+    first: c_int,
+    mem_offset: c_int,
+};
+pub const IndexDesc = extern struct {
+    data: [*]u16,
+    mem_offset: c_int,
+    first: c_int,
+    size: c_int,
+};
+pub const MeshDesc = extern struct {
+    vertex: VertexDesc,
+    index: IndexDesc,
+};
+pub const MeshBuffersAllocationSettings = opaque {};
+pub const BaseMeshBuilder = opaque {};
+pub const VertexFormat = enum(u64) { _ };
+pub const PrimitiveType = enum(c_int) {
+    points,
+    lines,
+    triangles,
+    triangle_strip,
+    line_strip,
+    line_loop,
+    polygon,
+    quads,
+};
+pub const MaterialIndexFormat = enum(c_int) {
+    unknown = -1,
+    fmt_16bit = 0,
+    fmt_32bit = 1,
+};
+pub const VMatrix = extern struct {
+    mat: [4][4]f32,
+    pub const identity: VMatrix = .{ .mat = .{
+        .{ 1, 0, 0, 0 },
+        .{ 0, 1, 0, 0 },
+        .{ 0, 0, 1, 0 },
+        .{ 0, 0, 0, 1 },
+    } };
+    pub fn scale(x: f32, y: f32, z: f32) VMatrix {
+        return .{ .mat = .{
+            .{ x, 0, 0, 0 },
+            .{ 0, y, 0, 0 },
+            .{ 0, 0, z, 0 },
+            .{ 0, 0, 0, 1 },
+        } };
+    }
+};
+pub const Matrix3x4 = opaque {};
+pub const MaterialMatrixMode = enum(c_int) {
+    view = 0,
+    projection = 1,
+    model = 10,
+};
+pub const PtrAlign16 = *align(16) anyopaque;

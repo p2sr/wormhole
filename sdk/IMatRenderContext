@@ -1,0 +1,17 @@
+NAME IMatRenderContext
+INHERITS IRefCounted
+
+VMETHODS
+
+beginRender: fn () void
+endRender: fn () void
+SKIP 5
+bind: fn (mat: *sdk.IMaterial, proxy_data: ?*anyopaque) void
+SKIP 10
+matrixMode: fn (mode: sdk.MaterialMatrixMode) void
+pushMatrix: fn () void
+popMatrix: fn () void
+loadMatrix: fn (mat: *const sdk.VMatrix) void
+loadMatrix3x4(loadMatrix): fn (mat: *const sdk.Matrix3x4) void
+SKIP 32
+getDynamicMesh: fn (buffered: bool, vert_override: ?*sdk.IMesh, idx_override: ?*sdk.IMesh, auto_bind: ?*sdk.IMaterial) *sdk.IMesh

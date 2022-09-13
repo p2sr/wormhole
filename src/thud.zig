@@ -28,8 +28,6 @@ pub const THud = struct {
     lines: []Line,
 
     fn evalLine(self: *THud, slot: u8, line: Line, draw_pos: ?std.meta.Vector(2, f32)) !f32 {
-        _ = self;
-
         var width: f32 = 0;
         var align_base: f32 = 0;
 
@@ -313,7 +311,7 @@ pub fn init(allocator1: std.mem.Allocator) !void {
                 .arena = arena.state,
                 .font = .{
                     .name = name,
-                    .tall = raw.font_size,
+                    .size = raw.font_size,
                 },
                 .spacing = raw.spacing,
                 .padding = raw.padding,

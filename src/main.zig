@@ -4,8 +4,8 @@ const tier0 = @import("tier0.zig");
 const interface = @import("interface.zig");
 const mods = @import("mods.zig");
 const surface = @import("surface.zig");
-const font_manager = @import("font_manager.zig");
 const thud = @import("thud.zig");
+const render_manager = @import("render_manager.zig");
 
 comptime {
     _ = @import("api.zig");
@@ -18,21 +18,21 @@ var gpa: std.heap.GeneralPurposeAllocator(.{}) = undefined;
 
 fn init() !void {
     gpa = .{};
-    errdefer std.debug.assert(!gpa.deinit());
+    errdefer _ = gpa.deinit();
 
     const version = @import("version.zig").getVersion();
     if (version == null) return error.UnknownEngineBuild;
     // TODO: load offsets etc
 
+    // Always init tier0 first so we have logging
     try tier0.init();
+
+    if (!sdk.init()) return error.SdkInitError;
 
     try interface.init(gpa.allocator());
     errdefer interface.deinit();
 
     surface.init(gpa.allocator());
-
-    font_manager.init(gpa.allocator());
-    errdefer font_manager.deinit();
 
     try mods.init(gpa.allocator());
     errdefer mods.deinit();
@@ -40,15 +40,16 @@ fn init() !void {
     try thud.init(gpa.allocator());
     errdefer thud.deinit();
 
-    font_manager.listFonts();
+    try render_manager.init(gpa.allocator());
+    errdefer render_manager.deinit();
 }
 
 fn deinit() void {
+    render_manager.deinit();
     thud.deinit();
     mods.deinit();
-    font_manager.deinit();
     interface.deinit();
-    std.debug.assert(!gpa.deinit());
+    _ = gpa.deinit();
 }
 
 // Plugin callbacks below
@@ -70,6 +71,8 @@ fn load(_: *sdk.IServerPluginCallbacks, interfaceFactory: sdk.CreateInterfaceFn,
         std.log.err("Error initializing Wormhole: {s}", .{@errorName(err)});
         return false;
     };
+
+    loaded = true;
 
     return true;
 }

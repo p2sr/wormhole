@@ -3,6 +3,7 @@ const sdk = @import("sdk");
 
 pub fn init() !void {
     var lib = try std.DynLib.open(names.lib);
+    defer lib.close();
 
     inline for (comptime std.meta.fieldNames(@TypeOf(names))) |field| {
         if (comptime std.mem.eql(u8, field, "lib")) continue;

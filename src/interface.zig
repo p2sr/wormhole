@@ -10,7 +10,6 @@ pub const orig = &orig_internal;
 
 const locations = .{
     .IEngineVGuiInternal = "engine:VEngineVGui001",
-    .ISurface = "vguimatsurface:VGUI_Surface031",
     .IVEngineClient = "engine:VEngineClient015",
     .IServerTools = "server:VSERVERTOOLS001",
     .IServerGameDLL = "server:ServerGameDLL005",
@@ -47,6 +46,7 @@ pub fn init(allocator1: std.mem.Allocator) !void {
         std.log.info("Opening {s}", .{library});
         if (std.mem.eql(u8, library, "server.so")) library = "portal2/bin/linux32/server.so";
         var lib = try std.DynLib.open(library);
+        defer lib.close();
 
         const createInterface = lib.lookup(sdk.CreateInterfaceFn, "CreateInterface") orelse return error.SymbolNotFound;
         const iface = @ptrCast(
@@ -109,7 +109,7 @@ fn copyVtable(comptime T: type, vtable: *const T) !*T {
 }
 
 pub const Ifaces = blk: {
-    var fields: [getDescs().len]std.builtin.TypeInfo.StructField = undefined;
+    var fields: [getDescs().len]std.builtin.Type.StructField = undefined;
 
     for (getDescs()) |desc, i| {
         const T = @field(sdk, desc.name);
@@ -131,7 +131,7 @@ pub const Ifaces = blk: {
 };
 
 pub const Orig = blk: {
-    var fields: [getDescs().len]std.builtin.TypeInfo.StructField = undefined;
+    var fields: [getDescs().len]std.builtin.Type.StructField = undefined;
 
     for (getDescs()) |desc, i| {
         const T = @field(sdk, desc.name).Vtable;

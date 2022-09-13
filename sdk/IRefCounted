@@ -1,0 +1,6 @@
+NAME IRefCounted
+
+VMETHODS
+
+addRef: fn () c_int
+release: fn () c_int

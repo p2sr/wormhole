@@ -1,0 +1,36 @@
+NAME ITexture
+
+VMETHODS
+
+getName: fn () [*:0]const u8
+getMappingWidth: fn () c_int
+getMappingHeight: fn () c_int
+getActualWidth: fn () c_int
+getActualHeight: fn () c_int
+getNumAnimationFrames: fn () c_int
+isTranslucent: fn () bool
+isMipmapped: fn () bool
+getLowResColorSample: fn (s: f32, t: f32, col: *f32) void
+getResourceData: fn (data_type: u32, num_bytes: *usize) *anyopaque
+incrementReferenceCount: fn () void
+decrementReferenceCount: fn () void
+setTextureRegenerator: fn (regenerator: *sdk.ITextureRegenerator, release_existing: bool) void
+download: fn (rect: ?*const sdk.Rect, additional_flags: c_int) void
+getApproximateVidMemBytes: fn () c_int
+isError: fn () bool
+isVolumeTexture: fn () bool
+getMappingDepth: fn () c_int
+getActualDepth: fn () c_int
+getImageFormat: fn () sdk.ImageFormat
+isRenderTarget: fn () bool
+isCubeMap: fn () bool
+isNormalMap: fn () bool
+isProcedural: fn () bool
+isDefaultPool: fn () bool
+deleteIfUnreferenced: fn () void
+swapContents: fn (other: *ITexture) void
+getFlags: fn () c_uint
+forceLodOverride: fn (num_lods: c_int) void
+forceExcludeOverride: fn (exclude_override: c_int) void
+addDownsizedSubTarget: fn (name: [*:0]const u8, downsize_pow_2: c_int, depth: sdk.MaterialRenderTargetDepth) void
+setActiveSubTarget: fn (name: [*:0]const u8) void

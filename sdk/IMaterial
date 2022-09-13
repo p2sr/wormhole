@@ -1,0 +1,9 @@
+NAME IMaterial
+
+VMETHODS
+
+SKIP 12
+incrementReferenceCount: fn () void
+decrementReferenceCount: fn () void
+SKIP 36
+deleteIfUnreferenced: fn () void

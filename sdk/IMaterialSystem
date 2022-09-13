@@ -1,2 +1,10 @@
-!90
-createProceduralTexture	CreateProceduralTexture	fn (tex_name: [*:0]const u8, tex_group_name: [*:0]const u8, width: c_int, height: c_int, fmt: sdk.ImageFormat, flags: c_int) *sdk.ITexture
+NAME IMaterialSystem
+
+VMETHODS
+
+SKIP 81
+createMaterial: fn (mat_name: [*:0]const u8, key_values: *sdk.KeyValues) ?*sdk.IMaterial
+SKIP 9
+createProceduralTexture: fn (tex_name: [*:0]const u8, tex_group_name: [*:0]const u8, width: c_int, height: c_int, fmt: sdk.ImageFormat, flags: sdk.TextureFlags) ?*sdk.ITexture
+SKIP 21
+getRenderContext: fn () *sdk.IMatRenderContext

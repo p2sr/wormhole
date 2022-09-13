@@ -97,6 +97,7 @@ pub fn init(allocator1: std.mem.Allocator) !void {
 pub fn deinit() void {
     var it = mods.iterator();
     while (it.next()) |kv| {
+        kv.value_ptr.lib.close();
         kv.value_ptr.arena.promote(allocator).deinit();
     }
     mods.deinit();

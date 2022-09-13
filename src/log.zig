@@ -8,6 +8,13 @@ const Context = union(enum) {
 };
 
 fn writeFn(ctx: Context, bytes: []const u8) error{}!usize {
+    if (bytes[0] == 0x1B) {
+        // Console color code, possibly from a stack trace. Ignore up to the terminating 'm'
+        if (std.mem.indexOfScalar(u8, bytes, 'm')) |len| {
+            return len + 1;
+        }
+    }
+
     switch (ctx) {
         .color => |c| tier0.colorMsg(&c, "%.*s", bytes.len, bytes.ptr),
         .dev => tier0.devMsg("%.*s", bytes.len, bytes.ptr),

@@ -1,0 +1,10 @@
+NAME IVtfTexture
+
+VMETHODS
+
+DESTRUCTOR
+SKIP 19
+format: fn () sdk.ImageFormat
+SKIP 16
+imageData: fn () [*]u8
+# incomplete

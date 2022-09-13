@@ -1,0 +1,26 @@
+NAME IMesh
+INHERITS IVertexBuffer
+INHERITS IIndexBuffer
+
+VMETHODS
+
+setPrimitiveType: fn (type: sdk.PrimitiveType) void
+draw: fn (first_idx: c_int, idx_count: c_int) void
+setColorMesh: fn (color_mesh: *IMesh, vert_offset: c_int) void
+drawLists(draw): fn (lists: *anyopaque, nlists: c_int) void
+copyToMeshBuilder: fn (start_vert: c_int, verts: c_int, start_idx: c_int, indices: c_int, idx_off: c_int, builder: *sdk.BaseMeshBuilder) void
+spew: fn (vert_count: c_int, idx_count: c_int, desc: *const sdk.MeshDesc) void
+validateData: fn (vert_count: c_int, idx_count: c_int, desc: *const sdk.MeshDesc) void
+lockMesh: fn (vert_count: c_int, idx_count: c_int, desc: *sdk.MeshDesc, settings: ?*sdk.MeshBuffersAllocationSettings) void
+modifyBegin: fn (first_vert: c_int, vert_count: c_int, first_idx: c_int, idx_count: c_int, desc: *sdk.MeshDesc) void
+modifyEnd: fn (desc: *sdk.MeshDesc) void
+unlockMesh: fn (vert_count: c_int, idx_count: c_int, desc: *sdk.MeshDesc) void
+modifyBeginEx: fn (read_only: bool, first_vert: c_int, vert_count: c_int, first_idx: c_int, idx_count: c_int, desc: *sdk.MeshDesc) void
+setFlexMesh: fn (mesh: *IMesh, vert_offset: c_int) void
+disableFlexMesh: fn () void
+markAsDrawn: fn () void
+drawModulated: fn (diffuse_modulation: *const anyopaque, first_idx: c_int, idx_count: c_int) void
+computeMemoryUsed: fn () c_uint
+accessRawHardwareDataStream: fn (raw_stream_idx: u8, num_bytes: u32, ui_flags: u32, context: *anyopaque) *anyopaque
+getCachedPerFrameMeshData: fn () *anyopaque
+reconstructFromCachedPerFrameMeshData: fn (data: *anyopaque) void

@@ -1,7 +1,6 @@
 const std = @import("std");
 const sdk = @import("sdk");
-const ifaces = @import("interface.zig").ifaces;
-const font_manager = @import("font_manager.zig");
+const render_manager = @import("render_manager.zig");
 
 var scale_i: f32 = 1;
 var origin_i = std.meta.Vector(2, i32){ 0, 0 };
@@ -13,16 +12,18 @@ pub const units_per_pixel = &units_per_pixel_i;
 
 var allocator: std.mem.Allocator = undefined;
 
+var color: sdk.Color = .{ .r = 255, .g = 255, .b = 255 };
+
 pub const Font = struct {
-    name: [:0]const u8,
-    tall: f32,
+    name: []const u8,
+    size: f32,
 };
 
-fn translate(coords: std.meta.Vector(2, f32)) std.meta.Vector(2, i32) {
+fn translate(coords: std.meta.Vector(2, f32)) std.meta.Vector(2, f32) {
     const scaled = coords * @splat(2, scale_i / units_per_pixel_i);
-    return std.meta.Vector(2, i32){
-        origin_i[0] + @floatToInt(i32, scaled[0]),
-        origin_i[1] + @floatToInt(i32, scaled[1]),
+    return std.meta.Vector(2, f32){
+        @intToFloat(f32, origin_i[0]) + scaled[0],
+        @intToFloat(f32, origin_i[1]) + scaled[1],
     };
 }
 
@@ -31,8 +32,7 @@ pub fn init(allocator1: std.mem.Allocator) void {
 }
 
 pub fn setColor(col: sdk.Color) void {
-    ifaces.ISurface.drawSetColor(col);
-    ifaces.ISurface.drawSetTextColor(col);
+    color = col;
 }
 
 pub fn drawRect(a: std.meta.Vector(2, f32), b: std.meta.Vector(2, f32)) void {
@@ -42,7 +42,7 @@ pub fn drawRect(a: std.meta.Vector(2, f32), b: std.meta.Vector(2, f32)) void {
     const xmax = std.math.max(a1[0], b1[0]);
     const ymin = std.math.min(a1[1], b1[1]);
     const ymax = std.math.max(a1[1], b1[1]);
-    ifaces.ISurface.drawOutlinedRect(xmin, ymin, xmax, ymax);
+    render_manager.drawRect(.{ xmin, ymin }, .{ xmax, ymax }, color);
 }
 
 pub fn fillRect(a: std.meta.Vector(2, f32), b: std.meta.Vector(2, f32)) void {
@@ -52,48 +52,22 @@ pub fn fillRect(a: std.meta.Vector(2, f32), b: std.meta.Vector(2, f32)) void {
     const xmax = std.math.max(a1[0], b1[0]);
     const ymin = std.math.min(a1[1], b1[1]);
     const ymax = std.math.max(a1[1], b1[1]);
-    ifaces.ISurface.drawFilledRect(xmin, ymin, xmax, ymax);
+    render_manager.fillRect(.{ xmin, ymin }, .{ xmax, ymax }, color);
 }
 
 pub fn getFontHeight(f: Font) f32 {
-    const font_id = font_manager.findRawFont(f.name, @floatToInt(u32, f.tall / units_per_pixel_i)) orelse 12; // TODO: default
-    const tall = ifaces.ISurface.getFontTall(font_id);
-    return @intToFloat(f32, tall) * units_per_pixel_i;
+    const size = @floatToInt(u32, f.size * scale_i / units_per_pixel_i * 64.0);
+    const info = render_manager.sizeInfo(f.name, size) catch unreachable;
+    return @intToFloat(f32, info.line_height) / scale_i * units_per_pixel_i / 64.0;
 }
 
 pub fn getTextLength(f: Font, str: []const u8) f32 {
-    var len: u32 = 0;
-
-    const font_id = font_manager.findRawFont(f.name, @floatToInt(u32, f.tall / units_per_pixel_i)) orelse 12; // TODO: default
-
-    for (str) |ch, i| {
-        const prev: sdk.wchar = if (i == 0) 0 else str[i - 1];
-        const next: sdk.wchar = if (i == str.len - 1) 0 else str[i + 1];
-        var wide: f32 = undefined;
-        var a: f32 = undefined;
-        var c: f32 = undefined;
-        ifaces.ISurface.getKernedCharWidth(font_id, ch, prev, next, &wide, &a, &c);
-        len += @floatToInt(u32, wide + 0.6);
-    }
-
-    return @intToFloat(f32, len) * units_per_pixel_i;
+    const size = @floatToInt(u32, f.size * scale_i / units_per_pixel_i * 64.0);
+    const len = render_manager.textLength(f.name, size, str) catch unreachable;
+    return @intToFloat(f32, len) / scale_i * units_per_pixel_i / 64.0;
 }
 
 pub fn drawText(f: Font, pos: std.meta.Vector(2, f32), str: []const u8) void {
-    const font_id = font_manager.findRawFont(f.name, @floatToInt(u32, f.tall * scale_i / units_per_pixel_i)) orelse 12; // TODO: default
-
-    const pos1 = translate(pos);
-    ifaces.ISurface.drawSetTextPos(@intCast(c_int, pos1[0]), @intCast(c_int, pos1[1]));
-    ifaces.ISurface.drawSetTextFont(font_id);
-
-    if (str.len <= 64) {
-        var buf: [64]sdk.wchar = undefined;
-        for (str) |c, i| buf[i] = c;
-        ifaces.ISurface.drawPrintText(&buf, @intCast(c_int, str.len), .default);
-    } else {
-        var buf = allocator.alloc(sdk.wchar, str.len) catch return; // TODO: handle some other way?
-        defer allocator.free(buf);
-        for (str) |c, i| buf[i] = c;
-        ifaces.ISurface.drawPrintText(buf.ptr, @intCast(c_int, str.len), .default);
-    }
+    const size = @floatToInt(u32, f.size * scale_i / units_per_pixel_i * 64.0);
+    render_manager.drawText(translate(pos), f.name, size, color, str) catch unreachable;
 }
