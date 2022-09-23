@@ -166,15 +166,15 @@ fn onEdictFreed(_: *sdk.IServerPluginCallbacks, edict: *const sdk.Edict) callcon
 
 // Automatically generates the IServerPluginCallbacks vtable from the
 // functions defined in this file
-var callbacks = sdk.IServerPluginCallbacks{
-    .vtable = &blk: {
+var callbacks = sdk.IServerPluginCallbacks{ .data = .{
+    ._vt = &blk: {
         var vt: sdk.IServerPluginCallbacks.Vtable = undefined;
         for (std.meta.fieldNames(@TypeOf(vt))) |name| {
             @field(vt, name) = &@field(@This(), name);
         }
         break :blk vt;
     },
-};
+} };
 
 // The function we expose to the game!
 export fn CreateInterface(name: [*:0]u8, ret: ?*c_int) ?*anyopaque {

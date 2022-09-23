@@ -1,7 +1,11 @@
-getIntersectingSurfaces	GetIntersectingSurfaces	fn (model: *const sdk.Model, center: *const sdk.Vector3D, radius: f32, only_visible_surfaces: bool, infos: [*]sdk.SurfInfo, max_infos: c_int) void
-getLightForPoint	GetLightForPoint	fn (pos: *const sdk.Vector3D, clamp: bool) sdk.Vector3D
-traceLineMaterialAndLighting	TraceLineMaterialAndLighting	fn (start: *const sdk.Vector3D, end: *const sdk.Vector3D, diffuse_light_color: *sdk.Vector3D, base_color: *sdk.Vector3D) *sdk.IMaterial
-parseFile	ParseFile	fn (data: [*:0]const u8, token: [*:0]u8, maxlen: c_int) [*]const u8
-copyLocalFile	CopyLocalFile	fn (src: [*:0]const u8, dst: [*:0]const u8) bool
-getScreenSize	GetScreenSize	fn (w: *c_int, h: *c_int) void
+NAME IVEngineClient
+
+VMETHODS
+
+getIntersectingSurfaces: fn (model: *const sdk.Model, center: *const sdk.Vector3D, radius: f32, only_visible_surfaces: bool, infos: [*]sdk.SurfInfo, max_infos: c_int) void
+getLightForPoint: fn (pos: *const sdk.Vector3D, clamp: bool) sdk.Vector3D
+traceLineMaterialAndLighting: fn (start: *const sdk.Vector3D, end: *const sdk.Vector3D, diffuse_light_color: *sdk.Vector3D, base_color: *sdk.Vector3D) *sdk.IMaterial
+parseFile: fn (data: [*:0]const u8, token: [*:0]u8, maxlen: c_int) [*]const u8
+copyLocalFile: fn (src: [*:0]const u8, dst: [*:0]const u8) bool
+getScreenSize: fn (w: *c_int, h: *c_int) void
 # TODO: there is much more here

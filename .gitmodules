@@ -1,0 +1,3 @@
+[submodule "deps/zig-classgen"]
+	path = deps/zig-classgen
+	url = https://github.com/mlugg/zig-classgen

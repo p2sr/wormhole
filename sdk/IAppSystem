@@ -1,0 +1,12 @@
+NAME IAppSystem
+
+VMETHODS
+
+connect: fn (factory: sdk.CreateInterfaceFn) void
+disconnect: fn () void
+queryInterface: fn (name: [*:0]const u8) ?*anyopaque
+init: fn () c_int
+shutdown: fn () void
+getDependencies: fn () ?*anyopaque
+getTier: fn () c_int
+reconnect: fn (factory: sdk.CreateInterfaceFn, name: [*:0]const u8) void

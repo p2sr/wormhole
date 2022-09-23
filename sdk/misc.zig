@@ -4,7 +4,7 @@ pub const CBaseEntity = opaque {};
 pub const IServerUnknown = opaque {};
 pub const IHandleEntity = opaque {};
 pub const PVSInfo = opaque {};
-pub const CreateInterfaceFn = *fn (name: [*:0]const u8, ret: ?*c_int) callconv(.C) ?*align(@alignOf(*anyopaque)) anyopaque;
+pub const CreateInterfaceFn = *const fn (name: [*:0]const u8, ret: ?*c_int) callconv(.C) ?*align(@alignOf(*anyopaque)) anyopaque;
 pub const ServerClass = opaque {};
 pub const CBaseNetworkable = opaque {};
 pub const CCommand = opaque {};
@@ -42,9 +42,10 @@ pub const VGuiPanel = enum(c_int) {
     steam_overlay,
 };
 pub const InputEvent = opaque {};
-pub const PaintMode = packed struct {
+pub const PaintMode = packed struct(c_int) {
     ui_panels: bool,
     in_game_panels: bool,
+    _pad: u30,
 };
 pub const LevelLoadingProgress = enum(c_int) {
     none,

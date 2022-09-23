@@ -1,201 +1,196 @@
-# TODO these are really fuckin wrong
-connect	Connect	fn () void
-disconnect	Disconnect	fn () void
-queryInterface	QueryInterface	fn () void
-init	Init	fn () void
-shutdown	Shutdown	fn () void
-getDependencies	GetDependencies	fn () void
-getTier	GetTier	fn () void
-reconnect	Reconnect	fn () void
+NAME ISurface
+INHERITS IAppSystem
 
-runFrame	RunFrame	fn () void
-getEmbeddedPanel	GetEmbeddedPanel	fn () sdk.Vpanel
-setEmbeddedPanel	SetEmbeddedPanel	fn (panel: sdk.Vpanel) void
-pushMakeCurrent	PushMakeCurrent	fn (panel: sdk.Vpanel, useInsets: bool) void
-popMakeCurrent	PopMakeCurrent	fn (panel: sdk.Vpanel) void
-drawSetColorRaw	DrawSetColor	fn (r: c_int, g: c_int, b: c_int, a: c_int) void
-drawSetColor	DrawSetColor	fn (color: sdk.Color) void
-drawFilledRect	DrawFilledRect	fn (x0: c_int, y0: c_int, x1: c_int, y1: c_int) void
-drawFilledRectArray	DrawFilledRectArray	fn (rects: [*]sdk.IntRect, num_rects: c_int) void
-drawOutlinedRect	DrawOutlinedRect	fn (x0: c_int, y0: c_int, x1: c_int, y1: c_int) void
-drawLine	DrawLine	fn (x0: c_int, y0: c_int, x1: c_int, y1: c_int) void
-drawPolyLine	DrawPolyLine	fn (px: [*]c_int, py: [*]c_int, num_points: c_int) void
-drawSetApparentDepth	DrawSetApparentDepth	fn (depth: f32) void
-drawClearApparentDepth	DrawClearApparentDepth	fn () void
-drawSetTextFont	DrawSetTextFont	fn (font: sdk.HFont) void
-drawSetTextColorRaw	DrawSetTextColor	fn (r: c_int, g: c_int, b: c_int, a: c_int) void
-drawSetTextColor	DrawSetTextColor	fn (color: sdk.Color) void
-drawSetTextPos	DrawSetTextPos	fn (x: c_int, y: c_int) void
-drawGetTextPos	DrawGetTextPos	fn (x: *c_int, y: *c_int) void
-drawPrintText	DrawPrintText	fn (text: [*]const sdk.wchar, text_len: c_int, draw_type: sdk.FontDrawType) void
-drawUnicodeChar	DrawUnicodeChar	fn (ch: sdk.wchar, draw_type: sdk.FontDrawType) void
+VMETHODS
 
-drawFlushText	DrawFlushText	fn () void
-createHtmlWindow	CreateHTMLWindow	fn (events: *sdk.IHTMLEvents, context: sdk.Vpanel) *sdk.IHTML
-paintHtmlWindow	PaintHTMLWindow	fn (html: *sdk.IHTML) void
-deleteHtmlWindow	DeleteHTMLWindow	fn (html: *sdk.IHTML) void
+runFrame: fn () void
+getEmbeddedPanel: fn () sdk.Vpanel
+setEmbeddedPanel: fn (panel: sdk.Vpanel) void
+pushMakeCurrent: fn (panel: sdk.Vpanel, useInsets: bool) void
+popMakeCurrent: fn (panel: sdk.Vpanel) void
+drawSetColorRaw: fn (r: c_int, g: c_int, b: c_int, a: c_int) void
+drawSetColor: fn (color: sdk.Color) void
+drawFilledRect: fn (x0: c_int, y0: c_int, x1: c_int, y1: c_int) void
+drawFilledRectArray: fn (rects: [*]sdk.IntRect, num_rects: c_int) void
+drawOutlinedRect: fn (x0: c_int, y0: c_int, x1: c_int, y1: c_int) void
+drawLine: fn (x0: c_int, y0: c_int, x1: c_int, y1: c_int) void
+drawPolyLine: fn (px: [*]c_int, py: [*]c_int, num_points: c_int) void
+drawSetApparentDepth: fn (depth: f32) void
+drawClearApparentDepth: fn () void
+drawSetTextFont: fn (font: sdk.HFont) void
+drawSetTextColorRaw: fn (r: c_int, g: c_int, b: c_int, a: c_int) void
+drawSetTextColor: fn (color: sdk.Color) void
+drawSetTextPos: fn (x: c_int, y: c_int) void
+drawGetTextPos: fn (x: *c_int, y: *c_int) void
+drawPrintText: fn (text: [*]const sdk.wchar, text_len: c_int, draw_type: sdk.FontDrawType) void
+drawUnicodeChar: fn (ch: sdk.wchar, draw_type: sdk.FontDrawType) void
 
-drawGetTextureId	DrawGetTextureId	fn (filename: [*:0]const u8) c_int
-drawGetTextureFile	DrawGetTextureFile	fn (id: c_int, filename: [*:0]u8, maxlen: c_int) bool
-drawSetTextureFile	DrawSetTextureFile	fn (id: c_int, filename: [*:0]const u8, maxlen: c_int) void
-drawSetTextureRgba	DrawSetTextureRGBA	fn (id: c_int, rgba: [*]const u8, wide: c_int, tall: c_int) bool
-drawSetTexture	DrawSetTexture	fn (id: c_int) void
-drawGetTextureSize	DrawGetTextureSize	fn (id: c_int, wide: *c_int, tall: *c_int) void
-drawTexturedRect	DrawTexturedRect	fn (x0: c_int, y0: c_int, x1: c_int, y1: c_int) void
-isTextureIdValid	IsTextureIDValid	fn (id: c_int) bool
+drawFlushText: fn () void
+createHtmlWindow: fn (events: *sdk.IHTMLEvents, context: sdk.Vpanel) *sdk.IHTML
+paintHtmlWindow: fn (html: *sdk.IHTML) void
+deleteHtmlWindow: fn (html: *sdk.IHTML) void
 
-createNewTextureId	CreateNewTextureID	fn (procedural: bool) c_int
+drawGetTextureId: fn (filename: [*:0]const u8) c_int
+drawGetTextureFile: fn (id: c_int, filename: [*:0]u8, maxlen: c_int) bool
+drawSetTextureFile: fn (id: c_int, filename: [*:0]const u8, maxlen: c_int) void
+drawSetTextureRgba: fn (id: c_int, rgba: [*]const u8, wide: c_int, tall: c_int) bool
+drawSetTexture: fn (id: c_int) void
+drawGetTextureSize: fn (id: c_int, wide: *c_int, tall: *c_int) void
+drawTexturedRect: fn (x0: c_int, y0: c_int, x1: c_int, y1: c_int) void
+isTextureIdValid: fn (id: c_int) bool
 
-getScreenSize	GetScreenSize	fn (wide: *c_int, tall: *c_int) c_int
-setAsTopMost	SetAsTopMost	fn (panel: sdk.Vpanel, state: bool) void
-bringToFront	BringToFront	fn (panel: sdk.Vpanel) void
-setForegroundWindow	SetForegroundWindow	fn (panel: sdk.Vpanel) void
-setPanelVisible	SetPanelVisible	fn (panel: sdk.Vpanel, state: bool) void
-setMinimized	SetMinimized	fn (panel: sdk.Vpanel, state: bool) void
-isMinimized	IsMinimized	fn (panel: sdk.Vpanel) bool
-flashWindow	FlashWindow	fn (panel: sdk.Vpanel, state: bool) void
-setTitle	SetTitle	fn (panel: sdk.Vpanel, title: [*:0]const sdk.wchar) void
-setAsToolbar	SetAsToolBar	fn (panel: sdk.Vpanel, state: bool) void
+createNewTextureId: fn (procedural: bool) c_int
 
-createPopup	CreatePopup	fn (panel: sdk.Vpanel, minimized: bool, show_taskbar_icon: bool, disabled: bool, mouse_input: bool, kb_input: bool) void
-swapBuffers	SwapBuffers	fn (panel: sdk.Vpanel) void
-invalidate	Invalidate	fn (panel: sdk.Vpanel) void
-setCursor	SetCursor	fn (cursor: sdk.HCursor) void
-isCursorVisible	IsCursorVisible	fn () bool
-applyChanges	ApplyChanges	fn () void
-isWithin	IsWithin	fn (x: c_int, y: c_int) bool
-hasFocus	HasFocus	fn () bool
+getScreenSize: fn (wide: *c_int, tall: *c_int) c_int
+setAsTopMost: fn (panel: sdk.Vpanel, state: bool) void
+bringToFront: fn (panel: sdk.Vpanel) void
+setForegroundWindow: fn (panel: sdk.Vpanel) void
+setPanelVisible: fn (panel: sdk.Vpanel, state: bool) void
+setMinimized: fn (panel: sdk.Vpanel, state: bool) void
+isMinimized: fn (panel: sdk.Vpanel) bool
+flashWindow: fn (panel: sdk.Vpanel, state: bool) void
+setTitle: fn (panel: sdk.Vpanel, title: [*:0]const sdk.wchar) void
+setAsToolbar: fn (panel: sdk.Vpanel, state: bool) void
 
-supportsFeature	SupportsFeature	fn (feature: sdk.SurfaceFeature) bool
+createPopup: fn (panel: sdk.Vpanel, minimized: bool, show_taskbar_icon: bool, disabled: bool, mouse_input: bool, kb_input: bool) void
+swapBuffers: fn (panel: sdk.Vpanel) void
+invalidate: fn (panel: sdk.Vpanel) void
+setCursor: fn (cursor: sdk.HCursor) void
+isCursorVisible: fn () bool
+applyChanges: fn () void
+isWithin: fn (x: c_int, y: c_int) bool
+hasFocus: fn () bool
 
-restrictPaintToSinglePanel	RestrictPaintToSinglePanel	fn (panel: sdk.Vpanel, force_allow_non_modal_surface: bool) void
+supportsFeature: fn (feature: sdk.SurfaceFeature) bool
 
-setModalPanel	SetModalPanel	fn (panel: sdk.Vpanel) void
-getModalPanel	GetModalPanel	fn () sdk.Vpanel
+restrictPaintToSinglePanel: fn (panel: sdk.Vpanel, force_allow_non_modal_surface: bool) void
 
-unlockCursor	UnlockCursor	fn () void
-lockCursor	LockCursor	fn () void
-setTranslateExtendedKeys	SetTranslateExtendedKeys	fn (state: bool) void
-getTopmostPopup	GetTopmostPopup	fn () sdk.Vpanel
+setModalPanel: fn (panel: sdk.Vpanel) void
+getModalPanel: fn () sdk.Vpanel
 
-setTopLevelFocus	SetTopLevelFocus	fn (panel: sdk.Vpanel) void
+unlockCursor: fn () void
+lockCursor: fn () void
+setTranslateExtendedKeys: fn (state: bool) void
+getTopmostPopup: fn () sdk.Vpanel
 
-createFont	CreateFont	fn () sdk.HFont
+setTopLevelFocus: fn (panel: sdk.Vpanel) void
 
-setFontGlyphSet	SetFontGlyphSet	fn (font: sdk.HFont, windows_font_name: [*:0]const u8, tall: c_int, weight: c_int, blur: c_int, scanlines: c_int, flags: c_int, range_min: c_int, range_max: c_int) bool
+createFont: fn () sdk.HFont
 
-addCustomFontFile	AddCustomFontFile	fn (font_filename: [*:0]const u8) bool
+setFontGlyphSet: fn (font: sdk.HFont, windows_font_name: [*:0]const u8, tall: c_int, weight: c_int, blur: c_int, scanlines: c_int, flags: c_int, range_min: c_int, range_max: c_int) bool
 
-getFontTall	GetFontTall	fn (font: sdk.HFont) c_int
-getFontAscent	GetFontAscent	fn (font: sdk.HFont, ch: sdk.wchar) c_int
-isFontAdditive	IsFontAdditive	fn (font: sdk.HFont) bool
-getCharAbcWide	GetCharABCwide	fn (font: sdk.HFont, ch: c_int, a: *c_int, b: *c_int, c: *c_int) void
-getCharacterWidth	GetCharacterWidth	fn (font: sdk.HFont, ch: c_int) c_int
-getTextSize	GetTextSize	fn (font: sdk.HFont, text: [*:0]const sdk.wchar, wide: *c_int, tall: *c_int) void
+addCustomFontFile: fn (font_filename: [*:0]const u8) bool
 
-getNotifyPanel	GetNotifyPanel	fn () sdk.Vpanel
-setNotifyIcon	SetNotifyIcon	fn (ctx: sdk.Vpanel, icon: sdk.HTexture, panel_to_receive_message: sdk.Vpanel, text: [*:0]const u8) void
+getFontTall: fn (font: sdk.HFont) c_int
+getFontAscent: fn (font: sdk.HFont, ch: sdk.wchar) c_int
+isFontAdditive: fn (font: sdk.HFont) bool
+getCharAbcWide: fn (font: sdk.HFont, ch: c_int, a: *c_int, b: *c_int, c: *c_int) void
+getCharacterWidth: fn (font: sdk.HFont, ch: c_int) c_int
+getTextSize: fn (font: sdk.HFont, text: [*:0]const sdk.wchar, wide: *c_int, tall: *c_int) void
 
-playSound	PlaySound	fn (filename: [*:0]const u8) void
+getNotifyPanel: fn () sdk.Vpanel
+setNotifyIcon: fn (ctx: sdk.Vpanel, icon: sdk.HTexture, panel_to_receive_message: sdk.Vpanel, text: [*:0]const u8) void
 
-getPopupCount	GetPopupCount	fn () c_int
-getPopup	GetPopup	fn (idx: c_int) sdk.Vpanel
-shouldPaintChildPanel	ShouldPaintChildPanel	fn (child: sdk.Vpanel) bool
-recreateContext	RecreateContext	fn (panel: sdk.Vpanel) bool
-addPanel	AddPanel	fn (panel: sdk.Vpanel) void
-releasePanel	ReleasePanel	fn (panel: sdk.Vpanel) void
-movePopupToFront	MovePopupToFront	fn (panel: sdk.Vpanel) void
-movePopupToBack	MovePopupToBack	fn (panel: sdk.Vpanel) void
+playSound: fn (filename: [*:0]const u8) void
 
-solveTraverse	SolveTraverse	fn (panel: sdk.Vpanel, force_apply_scheme_settings: bool) void
-paintTraverse	PaintTraverse	fn (panel: sdk.Vpanel) void
+getPopupCount: fn () c_int
+getPopup: fn (idx: c_int) sdk.Vpanel
+shouldPaintChildPanel: fn (child: sdk.Vpanel) bool
+recreateContext: fn (panel: sdk.Vpanel) bool
+addPanel: fn (panel: sdk.Vpanel) void
+releasePanel: fn (panel: sdk.Vpanel) void
+movePopupToFront: fn (panel: sdk.Vpanel) void
+movePopupToBack: fn (panel: sdk.Vpanel) void
 
-enableMouseCapture	EnableMouseCapture	fn (panel: sdk.Vpanel, state: bool) void
+solveTraverse: fn (panel: sdk.Vpanel, force_apply_scheme_settings: bool) void
+paintTraverse: fn (panel: sdk.Vpanel) void
 
-getWorkspaceBounds	GetWorkspaceBounds	fn (x: *c_int, y: *c_int, wide: *c_int, tall: *c_int) void
+enableMouseCapture: fn (panel: sdk.Vpanel, state: bool) void
 
-getAbsoluteWindowBounds	GetAbsoluteWindowBounds	fn (x: *c_int, y: *c_int, wide: *c_int, tall: *c_int) void
+getWorkspaceBounds: fn (x: *c_int, y: *c_int, wide: *c_int, tall: *c_int) void
 
-getProportionalBase	GetProportionalBase	fn (width: *c_int, height: *c_int) void
+getAbsoluteWindowBounds: fn (x: *c_int, y: *c_int, wide: *c_int, tall: *c_int) void
 
-calculateMouseVisible	CalculateMouseVisible	fn () void
-needKbInput	NeedKBInput	fn () bool
+getProportionalBase: fn (width: *c_int, height: *c_int) void
 
-hasCursorPosFunctions	HasCursorPosFunctions	fn () bool
-surfaceGetCursorPos	SurfaceGetCursorPos	fn (x: *c_int, y: *c_int) void
-surfaceSetCursorPos	SurfaceSetCursorPos	fn (x: c_int, y: c_int) void
+calculateMouseVisible: fn () void
+needKbInput: fn () bool
 
-drawTexturedLine	DrawTexturedLine	fn (a: *const sdk.Vertex, b: *const sdk.Vertex) void
-drawOutlinedCircle	DrawOutlinedCircle	fn (x: c_int, y: c_int, radius: c_int, segments: c_int) void
-drawTexturedPolyLine	DrawTexturedPolyLine	fn (p: *const sdk.Vertex, n: c_int) void
-drawTexturedSubRect	DrawTexturedSubRect	fn (x0: c_int, y0: c_int, x1: c_int, y1: c_int, texs0: f32, text0: f32, texs1: f32, text1: f32) void
-drawTexturedPolygon	DrawTexturedPolygon	fn (n: c_int, vertices: [*]sdk.Vertex, clip_vertices: bool) void
-getTitle	GetTitle	fn (panel: sdk.Vpanel) [*:0]const sdk.wchar
-isCursorLocked	IsCursorLocked	fn () bool
-setWorkspaceInsets	SetWorkspaceInsets	fn (left: c_int, top: c_int, right: c_int, bottom: c_int) void
+hasCursorPosFunctions: fn () bool
+surfaceGetCursorPos: fn (x: *c_int, y: *c_int) void
+surfaceSetCursorPos: fn (x: c_int, y: c_int) void
 
-drawWordBubble	DrawWordBubble	fn (x0: c_int, y0: c_int, x1: c_int, y1: c_int, border_thickness: c_int, background: sdk.Color, border: sdk.Color, pointer: bool, pointer_x: c_int, pointer_y: c_int, pointer_base_thickness: c_int) void
+drawTexturedLine: fn (a: *const sdk.Vertex, b: *const sdk.Vertex) void
+drawOutlinedCircle: fn (x: c_int, y: c_int, radius: c_int, segments: c_int) void
+drawTexturedPolyLine: fn (p: *const sdk.Vertex, n: c_int) void
+drawTexturedSubRect: fn (x0: c_int, y0: c_int, x1: c_int, y1: c_int, texs0: f32, text0: f32, texs1: f32, text1: f32) void
+drawTexturedPolygon: fn (n: c_int, vertices: [*]sdk.Vertex, clip_vertices: bool) void
+getTitle: fn (panel: sdk.Vpanel) [*:0]const sdk.wchar
+isCursorLocked: fn () bool
+setWorkspaceInsets: fn (left: c_int, top: c_int, right: c_int, bottom: c_int) void
 
-drawGetUnicodeCharRenderInfo	DrawGetUnicodeCharRenderInfo	fn (ch: sdk.wchar, info: *sdk.FontCharRenderInfo) bool
-drawRenderCharFromInfo	DrawRenderCharFromInfo	fn (info: *const sdk.FontCharRenderInfo) void
+drawWordBubble: fn (x0: c_int, y0: c_int, x1: c_int, y1: c_int, border_thickness: c_int, background: sdk.Color, border: sdk.Color, pointer: bool, pointer_x: c_int, pointer_y: c_int, pointer_base_thickness: c_int) void
 
-drawSetAlphaMultiplier	DrawSetAlphaMultiplier	fn (alpha: f32) void
-drawGetAlphaMultiplier	DrawGetAlphaMultiplier	fn () f32
+drawGetUnicodeCharRenderInfo: fn (ch: sdk.wchar, info: *sdk.FontCharRenderInfo) bool
+drawRenderCharFromInfo: fn (info: *const sdk.FontCharRenderInfo) void
 
-setAllowHtmlJavascript	SetAllowHTMLJavascript	fn (state: bool) void
+drawSetAlphaMultiplier: fn (alpha: f32) void
+drawGetAlphaMultiplier: fn () f32
 
-onScreenSizeChanged	OnScreenSizeChanged	fn (old_width: c_int, old_height: c_int) void
+setAllowHtmlJavascript: fn (state: bool) void
 
-createCursorFromFile	CreateCursorFromFile	fn (file: [*:0]const u8, path_id: [*:0]const u8) sdk.HCursor
+onScreenSizeChanged: fn (old_width: c_int, old_height: c_int) void
 
-drawGetTextureMatInfoFactory	DrawGetTextureMatInfoFactory	fn (id: c_int) *sdk.IVguiMatInfo
+createCursorFromFile: fn (file: [*:0]const u8, path_id: [*:0]const u8) sdk.HCursor
 
-paintTraverseEx	PaintTraverseEx	fn (panel: sdk.Vpanel, paint_popups: bool) void
+drawGetTextureMatInfoFactory: fn (id: c_int) *sdk.IVguiMatInfo
 
-getZPos	GetZPos	fn () f32
+paintTraverseEx: fn (panel: sdk.Vpanel, paint_popups: bool) void
 
-setPanelForInput	SetPanelForInput	fn (panel: sdk.Vpanel) void
-drawFilledRectFastFade	DrawFilledRectFastFade	fn (x0: c_int, y0: c_int, x1: c_int, y1: c_int, fade_start_pt: c_int, fade_end_pt: c_int, alpha0: c_uint, alpha1: c_uint, horizontal: bool) void
-drawFilledRectFade	DrawFilledRectFade	fn (x0: c_int, y0: c_int, x1: c_int, y1: c_int, alpha0: c_uint, alpha1: c_uint, horizontal: bool) void
-drawSetTextureRgbaEx	DrawSetTextureRGBAEx	fn (id: c_int, rgba: *[4]u8, wide: c_int, tall: c_int, image_format: sdk.ImageFormat) void
-drawSetTextScale	DrawSetTextScale	fn (sx: f32, sy: f32) void
-setBitmapFontGlyphSet	SetBitmapFontGlyphSet	fn (font: sdk.HFont, windows_font_name: [*:0]const u8, scalex: f32, scaley: f32, flags: c_int) void
-addBitmapFontFile	AddBitmapFontFile	fn (font_filename: [*:0]const u8) bool
-setBitmapFontName	SetBitmapFontName	fn (name: [*:0]const u8, font_filename: [*:0]const u8) void
-getBitmapFontName	GetBitmapFontName	fn (name: [*:0]const u8) [*:0]const u8
-clearTemporaryFontCache	ClearTemporaryFontCache	fn () void
+getZPos: fn () f32
 
-getIconImageForFullPath	GetIconImageForFullPath	fn (full_path: [*:0]const u8) *sdk.IImage
-drawUnicodeString	DrawUnicodeString	fn (string: [*:0]const sdk.wchar, draw_type: sdk.FontDrawType) void
-precacheFontCharacters	PrecacheFontCharacters	fn (font: sdk.HFont, characters: [*:0]const sdk.wchar) void
+setPanelForInput: fn (panel: sdk.Vpanel) void
+drawFilledRectFastFade: fn (x0: c_int, y0: c_int, x1: c_int, y1: c_int, fade_start_pt: c_int, fade_end_pt: c_int, alpha0: c_uint, alpha1: c_uint, horizontal: bool) void
+drawFilledRectFade: fn (x0: c_int, y0: c_int, x1: c_int, y1: c_int, alpha0: c_uint, alpha1: c_uint, horizontal: bool) void
+drawSetTextureRgbaEx: fn (id: c_int, rgba: *[4]u8, wide: c_int, tall: c_int, image_format: sdk.ImageFormat) void
+drawSetTextScale: fn (sx: f32, sy: f32) void
+setBitmapFontGlyphSet: fn (font: sdk.HFont, windows_font_name: [*:0]const u8, scalex: f32, scaley: f32, flags: c_int) void
+addBitmapFontFile: fn (font_filename: [*:0]const u8) bool
+setBitmapFontName: fn (name: [*:0]const u8, font_filename: [*:0]const u8) void
+getBitmapFontName: fn (name: [*:0]const u8) [*:0]const u8
+clearTemporaryFontCache: fn () void
 
-getFontName	GetFontName	fn (font: sdk.HFont) [*:0]const u8
+getIconImageForFullPath: fn (full_path: [*:0]const u8) *sdk.IImage
+drawUnicodeString: fn (string: [*:0]const sdk.wchar, draw_type: sdk.FontDrawType) void
+precacheFontCharacters: fn (font: sdk.HFont, characters: [*:0]const sdk.wchar) void
 
-forceScreenSizeOverride	ForceScreenSizeOverride	fn (state: bool, wide: c_int, tall: c_int) bool
-forceScreenPosOffset	ForceScreenPosOffset	fn (state: bool, x: c_int, y: c_int) bool
-offsetAbsPos	OffsetAbsPos	fn (x: *c_int, y: *c_int) void
+getFontName: fn (font: sdk.HFont) [*:0]const u8
 
-setAbsPosForContext	SetAbsPosForContext	fn (id: c_int, x: c_int, y: c_int) void
-getAbsPosForContext	GetAbsPosForContext	fn (id: c_int, x: *c_int, y: *c_int) void
+forceScreenSizeOverride: fn (state: bool, wide: c_int, tall: c_int) bool
+forceScreenPosOffset: fn (state: bool, x: c_int, y: c_int) bool
+offsetAbsPos: fn (x: *c_int, y: *c_int) void
 
-resetFontCaches	ResetFontCaches	fn () void
+setAbsPosForContext: fn (id: c_int, x: c_int, y: c_int) void
+getAbsPosForContext: fn (id: c_int, x: *c_int, y: *c_int) void
 
-isScreenSizeOverrideActive	IsScreenSizeOverrideActive	fn () bool
-isScreenPosOverrideActive	IsScreenPosOverrideActive	fn () bool
+resetFontCaches: fn () void
 
-destroyTextureId	DestroyTextureID	fn (id: c_int) void
+isScreenSizeOverrideActive: fn () bool
+isScreenPosOverrideActive: fn () bool
 
-getTextureNumFrames	GetTextureNumFrames	fn (id: c_int) c_int
-drawSetTextureFrame	DrawSetTextureFrame	fn (id: c_int, frame: c_int, frame_cache: *c_uint) void
+destroyTextureId: fn (id: c_int) void
 
-getClipRect	GetClipRect	fn (x0: *c_int, y0: *c_int, x1: *c_int, y1: *c_int) void
-setClipRect	SetClipRect	fn (x0: c_int, y0: c_int, x1: c_int, y1: c_int) void
+getTextureNumFrames: fn (id: c_int) c_int
+drawSetTextureFrame: fn (id: c_int, frame: c_int, frame_cache: *c_uint) void
 
-drawTexturedRectEx	DrawTexturedRectEx	fn (draw_params: sdk.DrawTexturedRectParms) void
+getClipRect: fn (x0: *c_int, y0: *c_int, x1: *c_int, y1: *c_int) void
+setClipRect: fn (x0: c_int, y0: c_int, x1: c_int, y1: c_int) void
 
-getKernedCharWidth	GetKernedCharWidth	fn (font: sdk.HFont, ch: sdk.wchar, before: sdk.wchar, after: sdk.wchar, wide: *f32, a: *f32, c: *f32) void
+drawTexturedRectEx: fn (draw_params: sdk.DrawTexturedRectParms) void
 
-drawUpdateRegionTextureRgba	DrawUpdateRegionTextureRGBA	fn (texture_id: c_int, x: c_int, y: c_int, data: [*]const u8, wide: c_int, tall: c_int, image_format: sdk.ImageFormat) void
-bhtmlWindowNeedsPaint	BHTMLWindowNeedsPaint	fn (html: *sdk.IHTML) bool
+getKernedCharWidth: fn (font: sdk.HFont, ch: sdk.wchar, before: sdk.wchar, after: sdk.wchar, wide: *f32, a: *f32, c: *f32) void
 
-drawSetTextureRgbaLinear	DrawSetTextureRGBALinear	fn (id: c_int, rgba: [*]const u8, wide: c_int, tall: c_int) void
+drawUpdateRegionTextureRgba: fn (texture_id: c_int, x: c_int, y: c_int, data: [*]const u8, wide: c_int, tall: c_int, image_format: sdk.ImageFormat) void
+bhtmlWindowNeedsPaint: fn (html: *sdk.IHTML) bool
+
+drawSetTextureRgbaLinear: fn (id: c_int, rgba: [*]const u8, wide: c_int, tall: c_int) void

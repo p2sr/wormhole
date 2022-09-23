@@ -19,11 +19,9 @@ fn readFuncPtr(comptime T: type, func: anytype, offset: usize) T {
     return @intToPtr(T, addr);
 }
 
-IEngineVGui: struct {
-    pub fn paint(self: *sdk.IEngineVGui, _mode: c_int) callconv(Method) void {
-        var ret = orig.IEngineVGui.paint(self, _mode);
-
-        const mode = @bitCast(sdk.PaintMode, @intCast(u2, _mode));
+IEngineVGuiInternal: struct {
+    pub fn paint(self: *sdk.IEngineVGuiInternal, mode: sdk.PaintMode) callconv(Method) void {
+        var ret = orig.IEngineVGuiInternal.paint(self, mode);
 
         // TODO: proper system for getting non-exposed shit, cuz this is
         // gross

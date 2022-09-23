@@ -1,56 +1,8 @@
-~	~	fn () void
-getPanel	GetPanel	fn (type: sdk.VGuiPanel) sdk.Vpanel
-isGameUiVisible	IsGameUIVisible	fn () bool
-activateGameUi	ActivateGameUI	fn () void
+NAME IEngineVGui
 
-init	Init	fn () void
-connect	Connect	fn () void
-shutdown	Shutdown	fn () void
-setVguiDirectories	SetVGUIDirectories	fn () bool
-isInitialized	IsInitialized	fn () bool
-getGameUiFactory	GetGameUIFactory	fn () sdk.CreateInterfaceFn
-keyEvent	Key_Event	fn (event: *const sdk.InputEvent) bool
-backCompatPaint	BackwardCompatibility_Paint	fn () void
-updateButtonState	UpdateButtonState	fn (event: *const sdk.InputEvent) void
-postInit	PostInit	fn () void
-# THIS PARAMETER SHOULD BE OF TYPE PaintMode
-# But that's currently not passable over C ABI
-paint	Paint	fn (mode: c_int) void
+VMETHODS
 
-hideGameUi	HideGameUI	fn () bool
-
-showConsole	ShowConsole	fn () void
-hideConsole	HideConsole	fn () void
-isConsoleVisible	IsConsoleVisible	fn () bool
-clearConsole	ClearConsole	fn () void
-
-hideDebugSystem	HideDebugSystem	fn () void
-
-onLevelLoadingStarted	OnLevelLoadingStarted	fn (level_name: [*:0]const u8, local_server: bool) void
-onLevelLoadingFinished	OnLevelLoadingFinished	fn () void
-notifyOfServerConnect	NotifyOfServerConnect	fn (game: [*:0]const u8, ip: c_int, conn_port: c_int, query_port: c_int) void
-notifyOfServerDisconnect	NotifyOfServerDisconnect	fn () void
-enabledProgressBarForNextLoad	EnabledProgressBarForNextLoad	fn () void
-updateProgressBar	UpdateProgressBar	fn (progress: sdk.LevelLoadingProgress, show_dialog: bool) void
-updateCustomProgressBar	UpdateCustomProgressVar	fn (progress: f32, desc: [*:0]const sdk.wchar) void
-startCustomProgress	StartCustomProgress	fn () void
-finishCustomProgress	FinishCustomProgress	fn () void
-showErrorMessage	ShowErrorMessage	fn () void
-hideLoadingPlaque	HideLoadingPlaque	fn () void
-
-shouldPause	ShouldPause	fn () bool
-setGameDllPanelsVisible	SetGameDLLPanelsVisible	fn (show: bool) void
-setProgressLevelName	SetProgressLevelName	fn (level_name: [*:0]const u8) void
-
-simulate	Simulate	fn () void
-
-setNotAllowedToHideGameUi	SetNotAllowedToHideGameUI	fn (disallowed: bool) void
-setNotAllowedToShowGameUi	SetNotAllowedToShowGameUI	fn (disallowed: bool) void
-
-needConnectionProblemWaitScreen	NeedConnectionProblemWaitScreen	fn () void
-showPasswordUi	ShowPasswordUI	fn (current_pw: [*:0]const u8) void
-onToolModeChanged	OnToolModeChanged	fn (game_mode: bool) void
-
-getGameUiInputContext	GetGameUIInputContext	fn () sdk.InputContextHandle
-
-isPlayingFullscreenVideo	IsPlayingFullScreenVideo	fn () bool
+DESTRUCTOR
+getPanel: fn (type: sdk.VGuiPanel) sdk.Vpanel
+isGameUiVisible: fn () bool
+activateGameUi: fn () void

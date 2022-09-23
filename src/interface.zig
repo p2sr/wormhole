@@ -3,21 +3,14 @@ const sdk = @import("sdk");
 const log = @import("log.zig");
 const hooks = @import("hooks.zig");
 
-var ifaces_internal = blk: { // This is a workaround for a weird result location bug, will be fixed in stage2
-    var i: Ifaces = undefined;
-    break :blk i;
-};
+var ifaces_internal: Ifaces = undefined;
 pub const ifaces = &ifaces_internal;
 
-var orig_internal = blk: {
-    var i: Orig = undefined;
-    break :blk i;
-};
+var orig_internal: Orig = undefined;
 pub const orig = &orig_internal;
 
 const locations = .{
-    .ICvar = "tier1:VEngineCvar007",
-    .IEngineVGui = "engine:VEngineVGui001",
+    .IEngineVGuiInternal = "engine:VEngineVGui001",
     .ISurface = "vguimatsurface:VGUI_Surface031",
     .IVEngineClient = "engine:VEngineClient015",
     .IServerTools = "server:VSERVERTOOLS001",
@@ -62,8 +55,8 @@ pub fn init(allocator1: std.mem.Allocator) !void {
         );
         @field(ifaces_internal, desc.name) = iface;
 
-        @field(orig_internal, desc.name) = iface.*.vtable;
-        const new_vtable = try copyVtable(@TypeOf(iface.*.vtable.*), iface.*.vtable);
+        @field(orig_internal, desc.name) = iface.data._vt;
+        const new_vtable = try copyVtable(@TypeOf(iface.data._vt.*), iface.data._vt);
 
         inline for (@typeInfo(desc.hooks).Struct.decls) |decl| {
             const hooked = @field(desc.hooks, decl.name);
@@ -71,7 +64,7 @@ pub fn init(allocator1: std.mem.Allocator) !void {
             @field(new_vtable.*, decl.name) = hooked;
         }
 
-        iface.*.vtable = new_vtable;
+        iface.data._vt = new_vtable;
 
         log.devInfo("Initialized interface {s}:{s}\n", .{ desc.module, desc.id });
     }
@@ -80,7 +73,7 @@ pub fn init(allocator1: std.mem.Allocator) !void {
 pub fn deinit() void {
     inline for (comptime getDescs()) |desc| {
         var iface = @field(ifaces_internal, desc.name);
-        iface.*.vtable = @field(orig_internal, desc.name);
+        iface.data._vt = @field(orig_internal, desc.name);
     }
 
     for (hooked_tables.items) |vtable| {

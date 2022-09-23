@@ -1,5 +1,5 @@
 const std = @import("std");
-const classgen = @import("classgen.zig");
+const classgen = @import("deps/zig-classgen/build.zig");
 
 pub fn build(b: *std.build.Builder) void {
     const target = b.standardTargetOptions(.{
@@ -12,9 +12,9 @@ pub fn build(b: *std.build.Builder) void {
 
     const lib = b.addSharedLibrary("wormhole", "src/main.zig", .unversioned);
     lib.link_z_notext = true; // ziglang/zig#7935
-    lib.addPackage(classgen.pkg(b, "sdk", "sdk"));
     lib.setBuildMode(mode);
     lib.setTarget(target);
+    classgen.addPackage(b, lib, "sdk", "sdk");
     lib.linkLibC();
     if (target.getOsTag() == .linux) {
         lib.linkSystemLibrary("fontconfig");

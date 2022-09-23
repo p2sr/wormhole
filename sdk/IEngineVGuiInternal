@@ -1,0 +1,58 @@
+NAME IEngineVGuiInternal
+INHERITS IEngineVGui
+
+VMETHODS
+
+init: fn () void
+connect: fn () void
+shutdown: fn () void
+setVguiDirectories: fn () bool
+isInitialized: fn () bool
+getGameUiFactory: fn () sdk.CreateInterfaceFn
+keyEvent: fn (event: *const sdk.InputEvent) bool
+backCompatPaint: fn () void
+updateButtonState: fn (event: *const sdk.InputEvent) void
+postInit: fn () void
+paint: fn (mode: sdk.PaintMode) void
+
+activateGameUi: fn () void
+hideGameUi: fn () bool
+isGameUiVisible: fn () bool
+
+showConsole: fn () void
+hideConsole: fn () void
+isConsoleVisible: fn () bool
+clearConsole: fn () void
+
+hideDebugSystem: fn () void
+
+onLevelLoadingStarted: fn (level_name: [*:0]const u8, local_server: bool) void
+onLevelLoadingFinished: fn () void
+notifyOfServerConnect: fn (game: [*:0]const u8, ip: c_int, conn_port: c_int, query_port: c_int) void
+notifyOfServerDisconnect: fn () void
+enabledProgressBarForNextLoad: fn () void
+updateProgressBar: fn (progress: sdk.LevelLoadingProgress, show_dialog: bool) void
+updateCustomProgressBar: fn (progress: f32, desc: [*:0]const sdk.wchar) void
+startCustomProgress: fn () void
+finishCustomProgress: fn () void
+showErrorMessage: fn () void
+hideLoadingPlaque: fn () void
+
+shouldPause: fn () bool
+setGameDllPanelsVisible: fn (show: bool) void
+setProgressLevelName: fn (level_name: [*:0]const u8) void
+
+simulate: fn () void
+
+setNotAllowedToHideGameUi: fn (disallowed: bool) void
+setNotAllowedToShowGameUi: fn (disallowed: bool) void
+
+needConnectionProblemWaitScreen: fn () void
+showPasswordUi: fn (current_pw: [*:0]const u8) void
+onToolModeChanged: fn (game_mode: bool) void
+
+getGameUiInputContext: fn () sdk.InputContextHandle
+
+isPlayingFullscreenVideo: fn () bool
+
+showPuzzlemaker: fn (show: bool) void
