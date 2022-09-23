@@ -1,6 +1,5 @@
 const std = @import("std");
 const sdk = @import("sdk");
-const log = @import("log.zig");
 const event = @import("event.zig");
 const ifaces = @import("interface.zig").ifaces;
 const orig = @import("interface.zig").orig;

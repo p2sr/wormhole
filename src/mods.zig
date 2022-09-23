@@ -1,5 +1,4 @@
 const std = @import("std");
-const log = @import("log.zig");
 const api = @import("api.zig");
 
 const ModSpec = struct {
@@ -62,7 +61,7 @@ pub fn init(allocator1: std.mem.Allocator) !void {
 
     var dir = std.fs.cwd().openIterableDir("mods", .{}) catch |err| switch (err) {
         error.FileNotFound, error.NotDir => {
-            log.info("mods directory not found; not loading any mods\n", .{});
+            std.log.info("mods directory not found; not loading any mods", .{});
             return;
         },
         else => |e| return e,
@@ -76,12 +75,12 @@ pub fn init(allocator1: std.mem.Allocator) !void {
         defer allocator.free(path);
         const mod_info = loadMod(path) catch |err| {
             switch (err) {
-                error.MissingModInfo => log.err("Missing MOD_INFO in {s}\n", .{ent.name}),
-                error.BadModName => log.err("Bad name in {s}\n", .{ent.name}),
-                error.BadModVersion => log.err("Bad version in {s}\n", .{ent.name}),
-                error.BadModDeps => log.err("Bad dependencies in {s}\n", .{ent.name}),
-                error.BadTHudComponents => log.err("Bad tHUD components in {s}\n", .{ent.name}),
-                error.BadEventHandlers => log.err("Bad event handlers in {s}\n", .{ent.name}),
+                error.MissingModInfo => std.log.err("Missing MOD_INFO in {s}", .{ent.name}),
+                error.BadModName => std.log.err("Bad name in {s}", .{ent.name}),
+                error.BadModVersion => std.log.err("Bad version in {s}", .{ent.name}),
+                error.BadModDeps => std.log.err("Bad dependencies in {s}", .{ent.name}),
+                error.BadTHudComponents => std.log.err("Bad tHUD components in {s}", .{ent.name}),
+                error.BadEventHandlers => std.log.err("Bad event handlers in {s}", .{ent.name}),
                 else => |e| return e,
             }
             continue;
@@ -246,7 +245,7 @@ fn validateMods(mod_list: []Mod) !void {
     for (mod_list) |mod| {
         const res = try mods.getOrPut(mod.spec.name);
         if (res.found_existing) {
-            log.err("Cannot load mod {s}; already loaded\n", .{
+            std.log.err("Cannot load mod {s}; already loaded", .{
                 mod.spec.name,
             });
             err = true;
@@ -257,7 +256,7 @@ fn validateMods(mod_list: []Mod) !void {
     }
 
     if (err) {
-        log.err("Error loading mods: duplicate mods\n", .{});
+        std.log.err("Error loading mods: duplicate mods", .{});
         return error.VersionConflicts;
     }
 
@@ -265,7 +264,7 @@ fn validateMods(mod_list: []Mod) !void {
         for (mod.deps) |dep| {
             if (mods.get(dep.name)) |dep_loaded| {
                 if (!compatibleWith(dep.version, dep_loaded.spec.version)) {
-                    log.err("Incompatible version of dependency {s} for mod {s}\n", .{
+                    std.log.err("Incompatible version of dependency {s} for mod {s}", .{
                         dep.name,
                         mod.spec.name,
                     });
@@ -273,7 +272,7 @@ fn validateMods(mod_list: []Mod) !void {
                 }
                 break;
             } else {
-                log.err("Missing dependency {s} for mod {s}\n", .{
+                std.log.err("Missing dependency {s} for mod {s}", .{
                     dep.name,
                     mod.spec.name,
                 });
@@ -283,14 +282,14 @@ fn validateMods(mod_list: []Mod) !void {
     }
 
     if (err) {
-        log.err("Error loading mods: missing dependencies\n", .{});
+        std.log.err("Error loading mods: missing dependencies", .{});
         return error.MissingDependencies;
     }
 
-    log.info("{} mods loaded:\n", .{mods.count()});
+    std.log.info("{} mods loaded:", .{mods.count()});
 
     for (mod_list) |mod| {
-        log.info("  {s}\n", .{mod.spec.name});
+        std.log.info("  {s}", .{mod.spec.name});
     }
 }
 

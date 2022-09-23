@@ -3,7 +3,6 @@ const sdk = @import("sdk");
 const tier0 = @import("tier0.zig");
 const interface = @import("interface.zig");
 const mods = @import("mods.zig");
-const log = @import("log.zig");
 const surface = @import("surface.zig");
 const font_manager = @import("font_manager.zig");
 const thud = @import("thud.zig");
@@ -11,6 +10,9 @@ const thud = @import("thud.zig");
 comptime {
     _ = @import("api.zig");
 }
+
+pub const log_level: std.log.Level = .debug;
+pub const log = @import("log.zig").log;
 
 var gpa: std.heap.GeneralPurposeAllocator(.{}) = undefined;
 
@@ -65,7 +67,7 @@ fn load(_: *sdk.IServerPluginCallbacks, interfaceFactory: sdk.CreateInterfaceFn,
     _ = gameServerFactory;
 
     init() catch |err| {
-        if (tier0.ready) log.err("Error initializing Wormhole: {s}\n", .{@errorName(err)});
+        std.log.err("Error initializing Wormhole: {s}", .{@errorName(err)});
         return false;
     };
 

@@ -1,5 +1,4 @@
 const ifaces = @import("interface.zig").ifaces;
-const log = @import("log.zig");
 
 pub const ServerEntity = opaque {};
 

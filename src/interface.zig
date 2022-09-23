@@ -1,6 +1,5 @@
 const std = @import("std");
 const sdk = @import("sdk");
-const log = @import("log.zig");
 const hooks = @import("hooks.zig");
 
 var ifaces_internal: Ifaces = undefined;
@@ -45,7 +44,7 @@ pub fn init(allocator1: std.mem.Allocator) !void {
                 else => @compileError("Unsupported OS"),
             };
 
-        log.info("Opening {s}\n", .{library});
+        std.log.info("Opening {s}", .{library});
         if (std.mem.eql(u8, library, "server.so")) library = "portal2/bin/linux32/server.so";
         var lib = try std.DynLib.open(library);
 
@@ -67,7 +66,7 @@ pub fn init(allocator1: std.mem.Allocator) !void {
 
         iface.data._vt = new_vtable;
 
-        log.devInfo("Initialized interface {s}:{s}\n", .{ desc.module, desc.id });
+        std.log.debug("Initialized interface {s}:{s}\n", .{ desc.module, desc.id });
     }
 }
 

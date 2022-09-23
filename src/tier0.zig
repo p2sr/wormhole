@@ -1,6 +1,5 @@
 const std = @import("std");
 const sdk = @import("sdk");
-const log = @import("log.zig");
 
 pub fn init() !void {
     var lib = try std.DynLib.open(names.lib);
@@ -14,7 +13,7 @@ pub fn init() !void {
 
     ready = true;
 
-    log.devInfo("Initialized tier0\n", .{});
+    std.log.debug("Initialized tier0", .{});
 }
 
 const FmtFn = *const fn (fmt: [*:0]const u8, ...) callconv(.C) void;

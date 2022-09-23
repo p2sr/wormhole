@@ -15,23 +15,32 @@ fn writeFn(ctx: Context, bytes: []const u8) error{}!usize {
     return bytes.len;
 }
 
-// TODO: write info to a log file
-fn write(ctx: Context, comptime fmt: []const u8, args: anytype) void {
+var log_mutex: std.Thread.Mutex = .{};
+
+pub fn log(
+    comptime level: std.log.Level,
+    comptime scope: @Type(.EnumLiteral),
+    comptime format: []const u8,
+    args: anytype,
+) void {
+    if (!tier0.ready) return; // we can't log if we don't have console
+
+    const scope_prefix = if (scope == .default) "" else ("[" ++ @tagName(scope) ++ "] ");
+    const ctx: Context = switch (level) {
+        .err => .{ .color = .{ .r = 255, .g = 90, .b = 90 } },
+        .warn => .{ .color = .{ .r = 255, .g = 190, .b = 60 } },
+        .info => .{ .color = .{ .r = 100, .g = 255, .b = 255 } },
+        .debug => .dev,
+    };
+
+    // TODO: the mutex is a stopgap solution, but really we should just send
+    // this stuff over to the main thread
+    log_mutex.lock();
+    defer log_mutex.unlock();
+
     std.fmt.format(
         std.io.Writer(Context, error{}, writeFn){ .context = ctx },
-        fmt,
+        scope_prefix ++ format ++ "\n",
         args,
     ) catch unreachable;
-}
-
-pub fn err(comptime fmt: []const u8, args: anytype) void {
-    write(.{ .color = .{ .r = 255, .g = 100, .b = 100 } }, fmt, args);
-}
-
-pub fn info(comptime fmt: []const u8, args: anytype) void {
-    write(.{ .color = .{ .r = 255, .g = 200, .b = 80 } }, fmt, args);
-}
-
-pub fn devInfo(comptime fmt: []const u8, args: anytype) void {
-    write(.dev, fmt, args);
 }

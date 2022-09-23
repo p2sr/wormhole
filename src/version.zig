@@ -1,5 +1,4 @@
 const std = @import("std");
-const log = @import("log.zig");
 
 fn findModule(comptime module_name: []const u8) ?[]const u8 {
     var mem: ?[]const u8 = null;
