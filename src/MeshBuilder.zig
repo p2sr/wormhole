@@ -1,5 +1,5 @@
 const sdk = @import("sdk");
-const ifaces = @import("interface.zig").ifaces;
+const ifaces = &@import("interface.zig").ifaces;
 
 const MeshBuilder = @This();
 

@@ -1,6 +1,6 @@
 const std = @import("std");
 const surface = @import("surface.zig");
-const ifaces = @import("interface.zig").ifaces;
+const ifaces = &@import("interface.zig").ifaces;
 
 pub fn Hud(comptime Context: type) type {
     return struct {

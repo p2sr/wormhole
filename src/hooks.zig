@@ -1,8 +1,8 @@
 const std = @import("std");
 const sdk = @import("sdk");
 const event = @import("event.zig");
-const ifaces = @import("interface.zig").ifaces;
-const orig = @import("interface.zig").orig;
+const ifaces = &@import("interface.zig").ifaces;
+const orig = &@import("interface.zig").orig;
 
 var count: u8 = 0;
 

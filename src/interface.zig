@@ -2,11 +2,9 @@ const std = @import("std");
 const sdk = @import("sdk");
 const hooks = @import("hooks.zig");
 
-var ifaces_internal: Ifaces = undefined;
-pub const ifaces = &ifaces_internal;
+pub var ifaces: Ifaces = undefined;
 
-var orig_internal: Orig = undefined;
-pub const orig = &orig_internal;
+pub var orig: Orig = undefined;
 
 const locations = .{
     .IEngineVGuiInternal = "engine:VEngineVGui001",
@@ -53,9 +51,9 @@ pub fn init(allocator1: std.mem.Allocator) !void {
             @TypeOf(@field(ifaces, desc.name)),
             createInterface(desc.id.ptr, null) orelse return error.InterfaceNotFound,
         );
-        @field(ifaces_internal, desc.name) = iface;
+        @field(ifaces, desc.name) = iface;
 
-        @field(orig_internal, desc.name) = iface.data._vt;
+        @field(orig, desc.name) = iface.data._vt;
         const new_vtable = try copyVtable(@TypeOf(iface.data._vt.*), iface.data._vt);
 
         inline for (@typeInfo(desc.hooks).Struct.decls) |decl| {
@@ -72,8 +70,8 @@ pub fn init(allocator1: std.mem.Allocator) !void {
 
 pub fn deinit() void {
     inline for (comptime getDescs()) |desc| {
-        var iface = @field(ifaces_internal, desc.name);
-        iface.data._vt = @field(orig_internal, desc.name);
+        var iface = @field(ifaces, desc.name);
+        iface.data._vt = @field(orig, desc.name);
     }
 
     for (hooked_tables.items) |vtable| {

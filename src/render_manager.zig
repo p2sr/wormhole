@@ -2,7 +2,7 @@ const std = @import("std");
 const sdk = @import("sdk");
 const fc = @import("fontconfig");
 const FontManager = @import("fontmanager").FontManager;
-const ifaces = @import("interface.zig").ifaces;
+const ifaces = &@import("interface.zig").ifaces;
 const MeshBuilder = @import("MeshBuilder.zig");
 
 var allocator: std.mem.Allocator = undefined;
