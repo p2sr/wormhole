@@ -1,0 +1,15 @@
+NAME IInputSystem
+INHERITS IAppSystem
+
+VMETHODS
+
+SKIP 6
+isButtonDown: fn (btn: sdk.ButtonCode) bool
+SKIP 23
+setCursorPosition: fn (x: c_int, y: c_int) void
+SKIP 6
+getCursorPosition: fn (x: *c_int, y: *c_int) void
+SKIP 3
+@L disableHardwareCursor: fn () void
+@L enableHardwareCursor: fn () void
+SKIP 15

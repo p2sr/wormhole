@@ -295,6 +295,8 @@ pub fn init(allocator1: std.mem.Allocator) !void {
             else => |e| return e,
         };
 
+        if (family[0] == 'D') std.log.info("FONT: '{s}'", .{family});
+
         if (!found_default) {
             for ([_][]const u8{
                 "DejaVu Sans",

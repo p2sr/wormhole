@@ -12,6 +12,7 @@ const locations = .{
     .IServerTools = "server:VSERVERTOOLS001",
     .IServerGameDLL = "server:ServerGameDLL005",
     .IMaterialSystem = "materialsystem:VMaterialSystem080",
+    .IInputSystem = "inputsystem:InputSystemVersion001",
 };
 
 var allocator: std.mem.Allocator = undefined;
@@ -24,6 +25,8 @@ pub fn init(allocator1: std.mem.Allocator) !void {
 
     hooked_tables = @TypeOf(hooked_tables).init(allocator);
     errdefer hooked_tables.deinit();
+
+    // TODO: on error remove hooks
 
     inline for (comptime getDescs()) |desc| {
         var library = if (std.mem.eql(u8, desc.module, "tier1"))
@@ -54,15 +57,18 @@ pub fn init(allocator1: std.mem.Allocator) !void {
         @field(ifaces, desc.name) = iface;
 
         @field(orig, desc.name) = iface.data._vt;
-        const new_vtable = try copyVtable(@TypeOf(iface.data._vt.*), iface.data._vt);
 
-        inline for (@typeInfo(desc.hooks).Struct.decls) |decl| {
-            const hooked = @field(desc.hooks, decl.name);
-            // TODO: assert type
-            @field(new_vtable.*, decl.name) = hooked;
+        if (@typeInfo(desc.hooks).Struct.decls.len > 0) {
+            const new_vtable = try copyVtable(@TypeOf(iface.data._vt.*), iface.data._vt);
+
+            inline for (@typeInfo(desc.hooks).Struct.decls) |decl| {
+                const hooked = @field(desc.hooks, decl.name);
+                // TODO: assert type
+                @field(new_vtable.*, decl.name) = hooked;
+            }
+
+            iface.data._vt = new_vtable;
         }
-
-        iface.data._vt = new_vtable;
 
         std.log.debug("Initialized interface {s}:{s}\n", .{ desc.module, desc.id });
     }
