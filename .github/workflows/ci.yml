@@ -12,7 +12,9 @@ jobs:
         uses: actions/cache@v2
         with:
           key: ${{ runner.os }}-build
-          path: zig-cache
+          path: |
+            zig-cache
+            ~/.cache/zig
       - name: Checkout
         uses: actions/checkout@v3
         with: { fetch-depth: 0, submodules: 'recursive' }
