@@ -7,7 +7,7 @@ const freetype = @import("deps/mach-freetype/build.zig");
 pub fn build(b: *std.build.Builder) void {
     const target = b.standardTargetOptions(.{
         .default_target = std.zig.CrossTarget.parse(.{
-            .arch_os_abi = "i386-native-gnu",
+            .arch_os_abi = "x86-native-gnu",
         }) catch unreachable,
     });
 

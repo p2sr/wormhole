@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Init Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           key: ${{ runner.os }}-build
           path: |
@@ -23,7 +23,7 @@ jobs:
         with: { version: master }
       - name: Build
         run: |
-          zig build -Dtarget=i386-linux-gnu
+          zig build -Dtarget=x86-linux-gnu
           mv zig-out/lib/libwormhole.so zig-out/lib/wormhole.so
       - name: Upload Binary
         uses: actions/upload-artifact@v3
