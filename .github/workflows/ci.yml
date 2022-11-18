@@ -11,7 +11,7 @@ jobs:
       - name: Init Cache
         uses: actions/cache@v3
         with:
-          key: ${{ runner.os }}-build
+          key: linux-build
           path: |
             zig-cache
             ~/.cache/zig
@@ -30,5 +30,33 @@ jobs:
         with:
           name: wormhole-linux
           path: zig-out/lib/wormhole.so
+          if-no-files-found: error
+  build-windows:
+    name: Windows Build
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Init Cache
+        uses: actions/cache@v3
+        with:
+          key: windows-build
+          path: |
+            zig-cache
+            ~/.cache/zig
+      - name: Checkout
+        uses: actions/checkout@v3
+        with: { fetch-depth: 0, submodules: 'recursive' }
+      - name: Install Zig
+        uses: goto-bus-stop/setup-zig@v1
+        with: { version: master }
+      - name: Build
+        run: |
+          zig build -Dtarget=x86-windows-gnu
+      - name: Upload Binary
+        uses: actions/upload-artifact@v3
+        with:
+          name: wormhole-windows
+          path: |
+            zig-out/lib/wormhole.dll
+            zig-out/lib/wormhole.pdb
           if-no-files-found: error
 
