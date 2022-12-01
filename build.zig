@@ -15,9 +15,6 @@ pub fn build(b: *std.build.Builder) void {
 
     const lib = b.addSharedLibrary("wormhole", "src/main.zig", .unversioned);
     lib.link_z_notext = true; // ziglang/zig#7935
-    if (target.getOsTag() == .windows) {
-        lib.want_lto = false; // ziglang/zig#8531
-    }
     lib.setBuildMode(mode);
     lib.setTarget(target);
     lib.linkLibC();
