@@ -136,7 +136,7 @@ fn Parser(comptime Reader: type) type {
                         _ = self.next() catch unreachable;
                         try str.append('{');
                     } else {
-                        if (str.items.len > 0) try parts.append(.{ .text = str.toOwnedSlice() });
+                        if (str.items.len > 0) try parts.append(.{ .text = try str.toOwnedSlice() });
                         try parts.append(try self.parseExpansion());
                     }
                 } else {
@@ -144,7 +144,7 @@ fn Parser(comptime Reader: type) type {
                 }
             }
 
-            if (str.items.len > 0) try parts.append(.{ .text = str.toOwnedSlice() });
+            if (str.items.len > 0) try parts.append(.{ .text = try str.toOwnedSlice() });
 
             return parts.toOwnedSlice();
         }
@@ -184,8 +184,8 @@ fn Parser(comptime Reader: type) type {
             if (mod.items.len > 0) {
                 const format1 = try format.toOwnedSliceSentinel(0);
                 return THud.Part{ .component = .{
-                    .mod = mod.toOwnedSlice(),
-                    .name = component.toOwnedSlice(),
+                    .mod = try mod.toOwnedSlice(),
+                    .name = try component.toOwnedSlice(),
                     .format = format1,
                 } };
             }
@@ -315,7 +315,7 @@ pub fn init(allocator1: std.mem.Allocator) !void {
                 },
                 .spacing = raw.spacing,
                 .padding = raw.padding,
-                .lines = lines.toOwnedSlice(),
+                .lines = try lines.toOwnedSlice(),
             },
             .screen_anchor = std.meta.Vector(2, f32){ raw.screen_anchor[0], raw.screen_anchor[1] },
             .hud_anchor = std.meta.Vector(2, f32){ raw.hud_anchor[0], raw.hud_anchor[1] },
@@ -324,7 +324,7 @@ pub fn init(allocator1: std.mem.Allocator) !void {
         });
     }
 
-    thuds = huds.toOwnedSlice();
+    thuds = try huds.toOwnedSlice();
 }
 
 pub fn deinit() void {

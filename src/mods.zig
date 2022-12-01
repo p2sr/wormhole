@@ -226,7 +226,7 @@ fn loadMod(path: []const u8) !Mod {
         .arena = arena.state,
         .lib = lib,
         .spec = spec,
-        .deps = dep_list.toOwnedSlice(),
+        .deps = try dep_list.toOwnedSlice(),
         .thud_components = thud_components,
         .event_handlers = event_handlers,
     };
