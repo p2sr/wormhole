@@ -4,6 +4,7 @@ const fc = @import("fontconfig");
 const FontManager = @import("fontmanager").FontManager(FontTextureContext);
 const ifaces = &@import("interface.zig").ifaces;
 const MeshBuilder = @import("MeshBuilder.zig");
+const main = @import("main.zig");
 
 var allocator: std.mem.Allocator = undefined;
 var texture_manager: TextureManager = undefined;
@@ -25,8 +26,8 @@ const ypix = 1.0 / 1080.0;
 const FontTextureContext = struct {
     pub const RenderTexture = *const TextureManager.Texture;
     pub fn getRenderTexture(_: FontTextureContext, idx: u32) RenderTexture {
-        var name_buf: [64]u8 = undefined;
-        const name = std.fmt.bufPrint(&name_buf, "_wh_font_page_{}", .{idx}) catch unreachable;
+        var name_buf: [128]u8 = undefined;
+        const name = std.fmt.bufPrint(&name_buf, "_wh_{d}_font_page_{d}", .{ main.wh_resource_prefix, idx }) catch unreachable;
 
         for (texture_manager.textures.items) |*tex| {
             if (std.mem.eql(u8, tex.name, name)) {
@@ -37,18 +38,18 @@ const FontTextureContext = struct {
         unreachable; // font texture not found
     }
     pub fn createTexture(_: FontTextureContext, idx: u32, w: u32, h: u32, data: []const u8) !void {
-        var name_buf: [64]u8 = undefined;
-        const name = std.fmt.bufPrint(&name_buf, "_wh_font_page_{}", .{idx}) catch unreachable;
+        var name_buf: [128]u8 = undefined;
+        const name = std.fmt.bufPrint(&name_buf, "_wh_{d}_font_page_{d}", .{ main.wh_resource_prefix, idx }) catch unreachable;
         try texture_manager.createTexture(name, w, h, data, false);
     }
     pub fn destroyTexture(_: FontTextureContext, idx: u32) void {
-        var name_buf: [64]u8 = undefined;
-        const name = std.fmt.bufPrint(&name_buf, "_wh_font_page_{}", .{idx}) catch unreachable;
+        var name_buf: [128]u8 = undefined;
+        const name = std.fmt.bufPrint(&name_buf, "_wh_{d}_font_page_{d}", .{ main.wh_resource_prefix, idx }) catch unreachable;
         texture_manager.destroyTexture(name);
     }
     pub fn updateTexture(_: FontTextureContext, idx: u32, x: u32, y: u32, w: u32, h: u32, data: []const u8) !void {
-        var name_buf: [64]u8 = undefined;
-        const name = std.fmt.bufPrint(&name_buf, "_wh_font_page_{}", .{idx}) catch unreachable;
+        var name_buf: [128]u8 = undefined;
+        const name = std.fmt.bufPrint(&name_buf, "_wh_{d}_font_page_{d}", .{ main.wh_resource_prefix, idx }) catch unreachable;
         try texture_manager.updateTexture(name, x, y, w, h, null);
         _ = data; // We know it's the same buffer - TODO should this arg even really exist?
     }
@@ -59,7 +60,7 @@ const TextureManager = struct {
     regenerator: Regenerator = .{},
 
     const Texture = struct {
-        name: []u8,
+        name: [:0]u8,
         width: u32,
         height: u32,
         buf: union(enum) {
@@ -77,16 +78,10 @@ const TextureManager = struct {
             }
             allocator.free(tex.name);
             // FIXME: the material sometimes has an extra reference, I suspect
-            // because it's bound. Decrementing the refcount twice *probably*
-            // works most of the time. TODO: unbind the material!!
+            // because it's bound. TODO: unbind the material!!
             tex.mat_depth.decrementReferenceCount();
-            tex.mat_depth.decrementReferenceCount();
-            tex.mat_depth.deleteIfUnreferenced();
             tex.mat_no_depth.decrementReferenceCount();
-            tex.mat_no_depth.decrementReferenceCount();
-            tex.mat_no_depth.deleteIfUnreferenced();
             tex.matsys_tex.decrementReferenceCount();
-            tex.matsys_tex.deleteIfUnreferenced();
         }
     };
 
@@ -297,7 +292,7 @@ pub fn init(allocator1: std.mem.Allocator) !void {
 
         if (font_names.contains(family)) continue;
 
-        const family_owned = try allocator.dupeZ(u8, family);
+        const family_owned = try allocator.dupe(u8, family);
         const file_owned = try allocator.dupeZ(u8, file);
         try font_names.put(allocator, family_owned, .{
             .file = file_owned,
@@ -328,6 +323,15 @@ pub fn init(allocator1: std.mem.Allocator) !void {
 
 pub fn deinit() void {
     font_manager.deinit();
+
+    {
+        var it = font_names.iterator();
+        while (it.next()) |kv| {
+            allocator.free(kv.key_ptr.*);
+            allocator.free(kv.value_ptr.file);
+        }
+        font_names.deinit(allocator);
+    }
 
     mat_solid_depth.decrementReferenceCount();
     mat_solid_depth.decrementReferenceCount(); // TODO

@@ -65,6 +65,7 @@ fn findModule(comptime module_name: []const u8, gpa: std.mem.Allocator) !?[][]co
 
 pub fn getVersion(gpa: std.mem.Allocator) !u16 {
     const engine_mems = try findModule("engine", gpa) orelse return error.UnknownEngineBuild;
+    defer gpa.free(engine_mems);
     for (engine_mems) |mem| {
         const idx = std.mem.indexOf(u8, mem, "Exe build:") orelse continue;
         const date_str = mem[idx + 20 .. idx + 31];

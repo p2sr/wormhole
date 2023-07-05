@@ -16,11 +16,20 @@ pub const std_options = struct {
     pub const logFn = @import("log.zig").log;
 };
 
-var gpa: std.heap.GeneralPurposeAllocator(.{}) = undefined;
+var gpa: std.heap.GeneralPurposeAllocator(.{
+    .stack_trace_frames = 8,
+}) = undefined;
+
+/// This is a random value created when Wormhole loads and persisted throughout the game's lifetime.
+/// Named resources such as textures should incorporate this value into their names. This prevents
+/// instances of Wormhole from fighting with each other across unloads/reloads.
+pub var wh_resource_prefix: u32 = undefined;
 
 fn init() !void {
     gpa = .{};
     errdefer _ = gpa.deinit();
+
+    std.os.getrandom(std.mem.asBytes(&wh_resource_prefix)) catch return error.RandomInitFailed;
 
     const version = try @import("version.zig").getVersion(gpa.allocator());
     // TODO: load offsets etc
