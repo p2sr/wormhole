@@ -11,8 +11,10 @@ comptime {
     _ = @import("api.zig");
 }
 
-pub const log_level: std.log.Level = .debug;
-pub const log = @import("log.zig").log;
+pub const std_options = struct {
+    pub const log_level: std.log.Level = .debug;
+    pub const logFn = @import("log.zig").log;
+};
 
 var gpa: std.heap.GeneralPurposeAllocator(.{}) = undefined;
 
@@ -20,9 +22,9 @@ fn init() !void {
     gpa = .{};
     errdefer _ = gpa.deinit();
 
-    const version = @import("version.zig").getVersion();
-    if (version == null) return error.UnknownEngineBuild;
+    const version = try @import("version.zig").getVersion(gpa.allocator());
     // TODO: load offsets etc
+    _ = version;
 
     // Always init tier0 first so we have logging
     try tier0.init();
@@ -185,7 +187,7 @@ var callbacks = sdk.IServerPluginCallbacks{ .data = .{
 export fn CreateInterface(name: [*:0]u8, ret: ?*c_int) ?*anyopaque {
     if (!std.mem.eql(u8, std.mem.span(name), "ISERVERPLUGINCALLBACKS003")) {
         if (ret) |r| r.* = 0;
-        return @ptrCast(*anyopaque, &callbacks);
+        return &callbacks;
     }
 
     if (ret) |r| r.* = 1;

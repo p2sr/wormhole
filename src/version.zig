@@ -1,18 +1,21 @@
 const std = @import("std");
 
-fn findModule(comptime module_name: []const u8) ?[]const u8 {
-    var mem: ?[]const u8 = null;
+fn findModule(comptime module_name: []const u8, gpa: std.mem.Allocator) !?[][]const u8 {
+    var ret = std.ArrayList([]const u8).init(gpa);
+    defer ret.deinit();
 
     switch (@import("builtin").os.tag) {
-        .linux => std.os.dl_iterate_phdr(&mem, anyerror, struct {
-            fn cb(info: *std.os.dl_phdr_info, size: usize, ctx: *?[]const u8) error{}!void {
+        .linux => try std.os.dl_iterate_phdr(&ret, anyerror, struct {
+            fn cb(info: *std.os.dl_phdr_info, size: usize, ctx: *std.ArrayList([]const u8)) !void {
                 _ = size;
-                if (std.mem.endsWith(u8, std.mem.span(info.dlpi_name).?, "/" ++ module_name ++ ".so")) {
-                    const base: usize = info.dlpi_addr + info.dlpi_phdr[0].p_paddr;
-                    ctx.* = @intToPtr([*]const u8, base)[0..info.dlpi_phdr[0].p_memsz];
+                if (!std.mem.endsWith(u8, std.mem.span(info.dlpi_name).?, "/" ++ module_name ++ ".so")) return;
+                for (info.dlpi_phdr[0..info.dlpi_phnum]) |phdr| {
+                    const base: usize = info.dlpi_addr + phdr.p_paddr;
+                    const mem = @as([*]const u8, @ptrFromInt(base))[0..phdr.p_memsz];
+                    try ctx.append(mem);
                 }
             }
-        }.cb) catch unreachable,
+        }.cb),
         .windows => {
             // Fucking hell Microsoft, why is this so hard
             const windows = std.os.windows;
@@ -50,57 +53,57 @@ fn findModule(comptime module_name: []const u8) ?[]const u8 {
                 ) == 0) continue;
 
                 if (std.mem.endsWith(u8, name_buf[0..name_len], "\\" ++ module_name ++ ".dll")) {
-                    mem = @ptrCast([*]const u8, info.lpBaseOfDll)[0..info.SizeOfImage];
+                    try ret.append(@as([*]const u8, @ptrCast(info.lpBaseOfDll))[0..info.SizeOfImage]);
                 }
             }
         },
         else => @compileError("Unsupported OS"),
     }
 
-    return mem;
+    return if (ret.items.len == 0) null else try ret.toOwnedSlice();
 }
 
-pub fn getVersion() ?u16 {
-    if (findModule("engine")) |engine| {
-        if (std.mem.indexOf(u8, engine, "Exe build:")) |idx| {
-            const date_str = engine[idx + 20 .. idx + 31];
+pub fn getVersion(gpa: std.mem.Allocator) !u16 {
+    const engine_mems = try findModule("engine", gpa) orelse return error.UnknownEngineBuild;
+    for (engine_mems) |mem| {
+        const idx = std.mem.indexOf(u8, mem, "Exe build:") orelse continue;
+        const date_str = mem[idx + 20 .. idx + 31];
 
-            const mons = [_][]const u8{
-                "Jan", "Feb", "Mar", "Apr",
-                "May", "Jun", "Jul", "Aug",
-                "Sep", "Oct", "Nov", "Dec",
-            };
+        const mons = [_][]const u8{
+            "Jan", "Feb", "Mar", "Apr",
+            "May", "Jun", "Jul", "Aug",
+            "Sep", "Oct", "Nov", "Dec",
+        };
 
-            const mon_days = [_]u8{
-                31, 28, 31, 30,
-                31, 30, 31, 31,
-                30, 31, 30, 31,
-            };
+        const mon_days = [_]u8{
+            31, 28, 31, 30,
+            31, 30, 31, 31,
+            30, 31, 30, 31,
+        };
 
-            var d: u8 = 0;
-            var m: u8 = 0;
-            var y: u16 = 0;
-            while (m < 11) : (m += 1) {
-                if (std.mem.eql(u8, date_str[0..3], mons[m])) break;
-                d += mon_days[m];
-            }
-
-            if (date_str[4] == ' ') {
-                d += (date_str[5] - '0') - 1;
-            } else {
-                d += (date_str[4] - '0') * 10 + (date_str[5] - '0') - 1;
-            }
-
-            y = (std.fmt.parseInt(u16, date_str[7..11], 10) catch 0) - 1900;
-
-            var build_num = @floatToInt(u16, @intToFloat(f32, y - 1) * 365.25);
-            build_num += d;
-            if (y % 4 == 0 and m > 1) build_num += 1;
-            build_num -= 35739;
-
-            return build_num;
+        var d: u8 = 0;
+        var m: u8 = 0;
+        var y: u16 = 0;
+        while (m < 11) : (m += 1) {
+            if (std.mem.eql(u8, date_str[0..3], mons[m])) break;
+            d += mon_days[m];
         }
+
+        if (date_str[4] == ' ') {
+            d += (date_str[5] - '0') - 1;
+        } else {
+            d += (date_str[4] - '0') * 10 + (date_str[5] - '0') - 1;
+        }
+
+        y = (std.fmt.parseInt(u16, date_str[7..11], 10) catch 0) - 1900;
+
+        var build_num: u16 = @intFromFloat(@as(f32, @floatFromInt(y - 1)) * 365.25);
+        build_num += d;
+        if (y % 4 == 0 and m > 1) build_num += 1;
+        build_num -= 35739;
+
+        return build_num;
     }
 
-    return null;
+    return error.UnknownEngineBuild;
 }

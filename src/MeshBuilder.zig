@@ -4,7 +4,7 @@ const ifaces = &@import("interface.zig").ifaces;
 const MeshBuilder = @This();
 
 inline fn advancePtr(ptr: anytype, bytes: c_int) void {
-    ptr.* = @intToPtr(@TypeOf(ptr.*), @ptrToInt(ptr.*) + @intCast(usize, bytes));
+    ptr.* = @ptrFromInt(@intFromPtr(ptr.*) + @as(usize, @intCast(bytes)));
 }
 
 desc: sdk.MeshDesc,
@@ -43,7 +43,7 @@ pub fn init(material: *sdk.IMaterial, lines: bool, max_verts: u32, max_indices: 
     mesh.setPrimitiveType(if (lines) .lines else .triangles);
 
     var desc: sdk.MeshDesc = undefined;
-    mesh.lockMesh(@intCast(c_int, max_verts), @intCast(c_int, max_indices), &desc, null);
+    mesh.lockMesh(@intCast(max_verts), @intCast(max_indices), &desc, null);
 
     return MeshBuilder{
         .desc = desc,
@@ -64,7 +64,7 @@ pub fn init(material: *sdk.IMaterial, lines: bool, max_verts: u32, max_indices: 
 }
 
 pub fn finish(self: *MeshBuilder) void {
-    self.mesh.unlockMesh(@intCast(c_int, self.num_verts), @intCast(c_int, self.num_indices), &self.desc);
+    self.mesh.unlockMesh(@intCast(self.num_verts), @intCast(self.num_indices), &self.desc);
     self.mesh.draw(-1, 0);
 
     self.render_ctx.matrixMode(.projection);
@@ -135,6 +135,6 @@ pub fn advanceVertex(self: *MeshBuilder) void {
 }
 
 pub fn index(self: *MeshBuilder, idx: u16) void {
-    self.desc.index.data[self.num_indices] = @intCast(u16, self.desc.vertex.first) + idx;
+    self.desc.index.data[self.num_indices] = @as(u16, @intCast(self.desc.vertex.first)) + idx;
     self.num_indices += 1;
 }

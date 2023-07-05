@@ -50,8 +50,7 @@ pub fn init(allocator1: std.mem.Allocator) !void {
         defer lib.close();
 
         const createInterface = lib.lookup(sdk.CreateInterfaceFn, "CreateInterface") orelse return error.SymbolNotFound;
-        const iface = @ptrCast(
-            @TypeOf(@field(ifaces, desc.name)),
+        const iface: @TypeOf(@field(ifaces, desc.name)) = @ptrCast(
             createInterface(desc.id.ptr, null) orelse return error.InterfaceNotFound,
         );
         @field(ifaces, desc.name) = iface;
@@ -98,7 +97,7 @@ fn copyVtable(comptime T: type, vtable: *const T) !*T {
     // this is RTTI shit, I don't really understand it, but SAR does it and
     // I'm pretty sure it's a good idea.
 
-    var vtable1 = std.mem.span(@ptrCast([*:null]const VtableEntry, vtable));
+    var vtable1 = std.mem.span(@as([*:null]const VtableEntry, @ptrCast(vtable)));
 
     // Include the preceding typeinfo shit and the terminator
     vtable1.len += 2;
@@ -109,17 +108,17 @@ fn copyVtable(comptime T: type, vtable: *const T) !*T {
 
     try hooked_tables.append(new_vtable);
 
-    return @ptrCast(*T, new_vtable.ptr + 1);
+    return @ptrCast(new_vtable.ptr + 1);
 }
 
 pub const Ifaces = blk: {
     var fields: [getDescs().len]std.builtin.Type.StructField = undefined;
 
-    for (getDescs()) |desc, i| {
+    for (getDescs(), 0..) |desc, i| {
         const T = @field(sdk, desc.name);
         fields[i] = .{
             .name = desc.name,
-            .field_type = *T,
+            .type = *T,
             .default_value = null,
             .is_comptime = false,
             .alignment = @alignOf(*T),
@@ -137,11 +136,11 @@ pub const Ifaces = blk: {
 pub const Orig = blk: {
     var fields: [getDescs().len]std.builtin.Type.StructField = undefined;
 
-    for (getDescs()) |desc, i| {
+    for (getDescs(), 0..) |desc, i| {
         const T = @field(sdk, desc.name).Vtable;
         fields[i] = .{
             .name = desc.name,
-            .field_type = *const T,
+            .type = *const T,
             .default_value = null,
             .is_comptime = false,
             .alignment = @alignOf(*T),
@@ -166,7 +165,7 @@ const IfaceDesc = struct {
 fn getDescs() []const IfaceDesc {
     comptime var descs: [std.meta.fields(@TypeOf(locations)).len]IfaceDesc = undefined;
 
-    inline for (comptime std.meta.fieldNames(@TypeOf(locations))) |name, i| {
+    inline for (comptime std.meta.fieldNames(@TypeOf(locations)), 0..) |name, i| {
         const desc = @field(locations, name);
         const idx = comptime std.mem.lastIndexOfScalar(u8, desc, ':') orelse {
             @compileError(std.fmt.comptimePrint(
@@ -184,7 +183,7 @@ fn getDescs() []const IfaceDesc {
 
         for (std.meta.fields(hooks)) |field| {
             if (std.mem.eql(u8, field.name, name)) {
-                descs[i].hooks = field.field_type;
+                descs[i].hooks = field.type;
             }
         }
     }

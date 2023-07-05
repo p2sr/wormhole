@@ -70,7 +70,7 @@ pub fn init(allocator1: std.mem.Allocator) !void {
 
     var dir_it = dir.iterate();
     while (try dir_it.next()) |ent| {
-        if (ent.kind != .File) continue;
+        if (ent.kind != .file) continue;
         const path = try std.fs.path.join(allocator, &.{ "mods", ent.name });
         defer allocator.free(path);
         const mod_info = loadMod(path) catch |err| {

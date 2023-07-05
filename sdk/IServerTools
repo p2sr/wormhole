@@ -11,17 +11,17 @@ setPlayerFov: fn (fov: c_int, client_player: *sdk.IClientEntity) bool
 getPlayerFov: fn (client_player: *sdk.IClientEntity) c_int
 isInNoClipMode: fn (client_player: *sdk.IClientEntity) bool
 
-firstEntity: fn () ?*c_void
-nextEntity: fn (ent: ?*c_void) ?*c_void
-findEntityByHammerId: fn (hammer_id: c_int) ?*c_void
+firstEntity: fn () ?*anyopaque
+nextEntity: fn (ent: ?*anyopaque) ?*anyopaque
+findEntityByHammerId: fn (hammer_id: c_int) ?*anyopaque
 
-getKeyValue: fn (ent: *c_void, field: [*:0]const u8, val: [*]u8, max_len: c_int) bool
-setKeyValueStr: fn (ent: *c_void, field: [*:0]const u8, val: [*:0]const u8) bool
-setKeyValueFloat: fn (ent: *c_void, field: [*:0]const u8, val: f32) bool
-setKeyValueVec: fn (ent: *c_void, field: [*:0]const u8, val: *const sdk.Vector3D) bool
+getKeyValue: fn (ent: *anyopaque, field: [*:0]const u8, val: [*]u8, max_len: c_int) bool
+setKeyValueStr: fn (ent: *anyopaque, field: [*:0]const u8, val: [*:0]const u8) bool
+setKeyValueFloat: fn (ent: *anyopaque, field: [*:0]const u8, val: f32) bool
+setKeyValueVec: fn (ent: *anyopaque, field: [*:0]const u8, val: *const sdk.Vector3D) bool
 
-createEntityByName: fn (classname: [*:0]const u8) *c_void
-dispatchSpawn: fn (ent: *c_void) void
+createEntityByName: fn (classname: [*:0]const u8) *anyopaque
+dispatchSpawn: fn (ent: *anyopaque) void
 destroyEntityByHammerId: fn (hammer_id: c_int) bool
 
 respawnEntitiesWithEdits: fn (infos: [*]sdk.CEntityRespawnInfo, ninfos: c_int) bool

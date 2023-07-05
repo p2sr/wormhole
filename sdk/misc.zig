@@ -146,13 +146,13 @@ pub const QAngle = extern struct {
     roll: f32,
 };
 pub const Model = opaque {}; // model_t
-pub const SurfInfo = struct {
+pub const SurfInfo = extern struct {
     verts: [16]Vector3D,
     nverts: c_ulong,
     plane: VPlane,
     engine_data: *anyopaque,
 };
-pub const VPlane = struct {
+pub const VPlane = extern struct {
     normal: Vector3D,
     dist: f32,
 };

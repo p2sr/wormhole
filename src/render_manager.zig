@@ -1,17 +1,23 @@
 const std = @import("std");
 const sdk = @import("sdk");
 const fc = @import("fontconfig");
-const FontManager = @import("fontmanager").FontManager;
+const FontManager = @import("fontmanager").FontManager(FontTextureContext);
 const ifaces = &@import("interface.zig").ifaces;
 const MeshBuilder = @import("MeshBuilder.zig");
 
 var allocator: std.mem.Allocator = undefined;
 var texture_manager: TextureManager = undefined;
-var font_manager: FontManager(FontTextureContext) = undefined;
+var font_manager: FontManager = undefined;
 var default_font_name: []const u8 = undefined;
 
 var mat_solid_depth: *sdk.IMaterial = undefined;
 var mat_solid_no_depth: *sdk.IMaterial = undefined;
+
+// TODO deinit
+var font_names: std.StringHashMapUnmanaged(struct {
+    file: [:0]const u8,
+    id: ?FontManager.FontId,
+}) = .{};
 
 const xpix = 1.0 / 2560.0;
 const ypix = 1.0 / 1080.0;
@@ -102,9 +108,7 @@ const TextureManager = struct {
                 if (tex.matsys_tex == matsys_tex) {
                     break tex;
                 }
-            } else {
-                return;
-            };
+            } else return;
 
             std.debug.assert(vtf_tex.format() == .bgra8888);
 
@@ -145,7 +149,7 @@ const TextureManager = struct {
         const name_owned = try allocator.dupeZ(u8, name);
         errdefer allocator.free(name_owned);
 
-        const matsys_tex = ifaces.IMaterialSystem.createProceduralTexture(name_owned.ptr, "Wormhole textures", @intCast(c_int, w), @intCast(c_int, h), .bgra8888, .{
+        const matsys_tex = ifaces.IMaterialSystem.createProceduralTexture(name_owned.ptr, "Wormhole textures", @intCast(w), @intCast(h), .bgra8888, .{
             .clamp_s = true,
             .clamp_t = true,
             .no_mip = true,
@@ -154,7 +158,7 @@ const TextureManager = struct {
         }) orelse return error.TextureInitError;
         errdefer matsys_tex.decrementReferenceCount();
 
-        matsys_tex.setTextureRegenerator(@ptrCast(*sdk.ITextureRegenerator, &self.regenerator), true);
+        matsys_tex.setTextureRegenerator(@ptrCast(&self.regenerator), true);
 
         const mat_depth = try createTexMaterial(name, false);
         errdefer mat_depth.decrementReferenceCount();
@@ -191,7 +195,7 @@ const TextureManager = struct {
     }
 
     pub fn destroyTexture(self: *TextureManager, name: []const u8) void {
-        for (self.textures.items) |tex, i| {
+        for (self.textures.items, 0..) |tex, i| {
             if (std.mem.eql(u8, tex.name, name)) {
                 tex.deinit();
                 _ = self.textures.swapRemove(i);
@@ -228,11 +232,12 @@ const TextureManager = struct {
             std.debug.assert(tex.buf == .external);
         }
 
-        tex.matsys_tex.download(&.{
-            .x = @intCast(c_int, x),
-            .y = @intCast(c_int, y),
-            .w = @intCast(c_int, w),
-            .h = @intCast(c_int, h),
+        // explicit arg type to allow known result type
+        tex.matsys_tex.download(&sdk.Rect{
+            .x = @intCast(x),
+            .y = @intCast(y),
+            .w = @intCast(w),
+            .h = @intCast(h),
         }, 0);
     }
 
@@ -271,7 +276,7 @@ pub fn init(allocator1: std.mem.Allocator) !void {
     mat_solid_depth = try createMaterial("_wh_solid_depth", null, false);
     mat_solid_no_depth = try createMaterial("_wh_solid_no_depth", null, true);
 
-    font_manager = try FontManager(FontTextureContext).init(allocator, .{}, .{});
+    font_manager = try FontManager.init(allocator, .{}, .{});
     errdefer font_manager.deinit();
 
     const conf = try fc.FontConfig.init();
@@ -290,12 +295,14 @@ pub fn init(allocator1: std.mem.Allocator) !void {
         const family = font.getProperty(.family, 0) catch continue;
         const file = font.getProperty(.file, 0) catch continue;
 
-        font_manager.registerFont(family, file, 0) catch |err| switch (err) {
-            error.FontAlreadyExists => continue,
-            else => |e| return e,
-        };
+        if (font_names.contains(family)) continue;
 
-        if (family[0] == 'D') std.log.info("FONT: '{s}'", .{family});
+        const family_owned = try allocator.dupeZ(u8, family);
+        const file_owned = try allocator.dupeZ(u8, file);
+        try font_names.put(allocator, family_owned, .{
+            .file = file_owned,
+            .id = null,
+        });
 
         if (!found_default) {
             for ([_][]const u8{
@@ -332,20 +339,23 @@ pub fn deinit() void {
     texture_manager.deinit();
 }
 
-fn translateFont(name: []const u8) []const u8 {
-    return if (font_manager.hasFont(name)) name else default_font_name;
+fn getFont(name: []const u8) !FontManager.FontId {
+    const ptr = font_names.getPtr(name) orelse font_names.getPtr(default_font_name).?;
+    if (ptr.id) |id| return id;
+    ptr.id = try font_manager.registerFont(ptr.file, 0);
+    return ptr.id.?;
 }
 
 pub fn drawText(pos: [2]f32, font: []const u8, size: u32, col: sdk.Color, str: []const u8) !void {
-    const real_font = translateFont(font);
+    const font_id = try getFont(font);
 
     var x: f32 = pos[0] * xpix;
     var y: f32 = pos[1] * ypix;
 
-    const size_info = try font_manager.sizeInfo(real_font, size, null);
-    y += @intToFloat(f32, size_info.ascender) * ypix / 64.0;
+    const size_info = try font_manager.sizeInfo(font_id, size, null);
+    y += @as(f32, @floatFromInt(size_info.ascender)) * ypix / 64.0;
 
-    var it = try font_manager.glyphIterator(real_font, size, null, str);
+    var it = try font_manager.glyphIterator(font_id, size, null, str);
     defer it.deinit();
 
     var cur_mat: ?*sdk.IMaterial = null;
@@ -361,12 +371,12 @@ pub fn drawText(pos: [2]f32, font: []const u8, size: u32, col: sdk.Color, str: [
             cur_mat = mat;
         }
 
-        const w = @intToFloat(f32, glyph.layout.width) * xpix / 64.0;
-        const h = @intToFloat(f32, glyph.layout.height) * ypix / 64.0;
-        const first_vert = @intCast(u16, mb.num_verts);
+        const w = @as(f32, @floatFromInt(glyph.layout.width)) * xpix / 64.0;
+        const h = @as(f32, @floatFromInt(glyph.layout.height)) * ypix / 64.0;
+        const first_vert: u16 = @intCast(mb.num_verts);
 
-        const gx = x + @intToFloat(f32, glyph.layout.x_offset) * xpix / 64.0;
-        const gy = y - @intToFloat(f32, glyph.layout.y_offset) * ypix / 64.0;
+        const gx = x + @as(f32, @floatFromInt(glyph.layout.x_offset)) * xpix / 64.0;
+        const gy = y - @as(f32, @floatFromInt(glyph.layout.y_offset)) * ypix / 64.0;
 
         mb.position(.{ .x = gx, .y = gy, .z = 0 });
         mb.color(col);
@@ -396,14 +406,14 @@ pub fn drawText(pos: [2]f32, font: []const u8, size: u32, col: sdk.Color, str: [
         mb.index(first_vert + 2);
         mb.index(first_vert + 3);
 
-        x += @intToFloat(f32, glyph.layout.advance) * xpix / 64.0;
+        x += @as(f32, @floatFromInt(glyph.layout.advance)) * xpix / 64.0;
     }
 }
 
 pub fn textLength(font: []const u8, size: u32, str: []const u8) !u32 {
-    const real_font = translateFont(font);
+    const font_id = try getFont(font);
 
-    var it = try font_manager.glyphIterator(real_font, size, null, str);
+    var it = try font_manager.glyphIterator(font_id, size, null, str);
     defer it.deinit();
 
     var cur: i32 = 0;
@@ -415,12 +425,12 @@ pub fn textLength(font: []const u8, size: u32, str: []const u8) !u32 {
         if (cur < min) min = cur;
     }
 
-    return @intCast(u32, max - min);
+    return @intCast(max - min);
 }
 
 pub fn sizeInfo(font: []const u8, size: u32) !@TypeOf(font_manager).SizeInfo {
-    const real_font = translateFont(font);
-    return font_manager.sizeInfo(real_font, size, null);
+    const font_id = try getFont(font);
+    return font_manager.sizeInfo(font_id, size, null);
 }
 
 pub fn drawRect(a: [2]f32, b: [2]f32, col: sdk.Color) void {

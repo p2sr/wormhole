@@ -4,31 +4,27 @@ const fontmanager = @import("deps/zig-fontmanager/build.zig");
 const fontconfig = @import("deps/zig-fontconfig/build.zig");
 const freetype = @import("deps/mach-freetype/build.zig");
 
-pub fn build(b: *std.build.Builder) void {
+pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{
         .default_target = std.zig.CrossTarget.parse(.{
             .arch_os_abi = "x86-native-gnu",
         }) catch unreachable,
     });
+    const optimize = b.standardOptimizeOption(.{});
 
-    const mode = b.standardReleaseOptions();
-
-    const lib = b.addSharedLibrary("wormhole", "src/main.zig", .unversioned);
+    const lib = b.addSharedLibrary(.{
+        .name = "wormhole",
+        .root_source_file = .{ .path = "src/main.zig" },
+        .target = target,
+        .optimize = optimize,
+    });
     lib.link_z_notext = true; // ziglang/zig#7935
-    lib.setBuildMode(mode);
-    lib.setTarget(target);
     lib.linkLibC();
-    classgen.addPackage(b, lib, "sdk", "sdk");
+    classgen.addModule(b, lib, "sdk", "sdk");
     freetype.link(b, lib, .{ .harfbuzz = .{} });
     fontconfig.link(b, lib);
-    lib.addPackage(fontmanager.pkg(freetype));
-    lib.addPackage(fontconfig.pkg(freetype));
-    lib.addPackage(freetype.pkg);
-    lib.install();
-
-    var main_tests = b.addTest("src/main.zig");
-    main_tests.setBuildMode(mode);
-
-    const test_step = b.step("test", "Run library tests");
-    test_step.dependOn(&main_tests.step);
+    lib.addModule("fontmanager", fontmanager.module(b, freetype));
+    lib.addModule("fontconfig", fontconfig.module(b, freetype));
+    lib.addModule("freetype", freetype.module(b));
+    b.installArtifact(lib);
 }

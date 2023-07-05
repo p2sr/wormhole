@@ -13,7 +13,7 @@ pub fn callExternal(mod: []const u8, func: anytype, args: anytype) @typeInfo(std
 
     active_mod = mod;
 
-    return @call(.{}, func, args);
+    return @call(.auto, func, args);
 }
 
 export fn wh_trigger_event(name: [*:0]const u8, data: ?*anyopaque) void {

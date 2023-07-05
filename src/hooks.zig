@@ -12,10 +12,10 @@ const Method = switch (@import("builtin").os.tag) {
 };
 
 fn readFuncPtr(comptime T: type, func: anytype, offset: usize) T {
-    const raw = @ptrToInt(func);
-    const diff = @intToPtr(*align(1) const usize, raw + offset).*;
+    const raw = @intFromPtr(func);
+    const diff = @as(*align(1) const usize, @ptrFromInt(raw + offset)).*;
     const addr = (raw + offset + @sizeOf(usize)) +% diff;
-    return @intToPtr(T, addr);
+    return @ptrFromInt(addr);
 }
 
 IEngineVGuiInternal: struct {
