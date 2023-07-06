@@ -1,4 +1,5 @@
 const std = @import("std");
+const Wormhole = @import("Wormhole.zig");
 const event = @import("event.zig");
 
 // This file should deal with *all* calls between Wormhole and mods
@@ -17,8 +18,9 @@ pub fn callExternal(mod: []const u8, func: anytype, args: anytype) @typeInfo(std
 }
 
 export fn wh_trigger_event(name: [*:0]const u8, data: ?*anyopaque) void {
+    const wh = Wormhole.getInst();
     if (active_mod) |m|
-        event.trigger(m, std.mem.span(name), data)
+        event.trigger(wh, m, std.mem.span(name), data)
     else
         @panic("wh_trigger_event without active mod");
 }

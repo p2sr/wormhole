@@ -23,8 +23,8 @@ cur_vert_data: struct {
     tangent_t: ?[*]f32,
 },
 
-pub fn init(material: *sdk.IMaterial, lines: bool, max_verts: u32, max_indices: u32) MeshBuilder {
-    const IMaterialSystem = Wormhole.getInst().interface_manager.ifaces.IMaterialSystem;
+pub fn init(wh: *Wormhole, material: *sdk.IMaterial, lines: bool, max_verts: u32, max_indices: u32) MeshBuilder {
+    const IMaterialSystem = wh.interface_manager.ifaces.IMaterialSystem;
     const render_ctx = IMaterialSystem.getRenderContext();
     render_ctx.beginRender();
 

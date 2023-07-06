@@ -15,11 +15,10 @@ const RenderManager = @import("RenderManager.zig");
 
 /// Gets the global Wormhole instance. Use of this function is discouraged, and
 /// should only occur on API boundaries where there is no other reference to the
-/// instance. Asserts that Wormhole is loading or loaded.
-/// TODO: change the assertion to only allow loaded. Currently not possible since getInst is used in init.
+/// instance. Asserts that Wormhole is loaded.
 pub fn getInst() *Wormhole {
     const wh = getInstUnchecked();
-    assert(wh.load_state != .unloaded);
+    assert(wh.load_state == .loaded);
     return wh;
 }
 

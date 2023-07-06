@@ -390,7 +390,7 @@ pub fn drawText(rm: *RenderManager, pos: [2]f32, font: []const u8, size: u32, co
         if (cur_mat != mat) {
             // Flush existing mesh and move onto next
             if (cur_mat != null) mb.finish();
-            mb = MeshBuilder.init(mat, false, it.numGlyphs() * 4, it.numGlyphs() * 6);
+            mb = MeshBuilder.init(rm.wh, mat, false, it.numGlyphs() * 4, it.numGlyphs() * 6);
             cur_mat = mat;
         }
 
@@ -457,7 +457,7 @@ pub fn sizeInfo(rm: *RenderManager, font: []const u8, size: u32) !FontManager.Si
 }
 
 pub fn drawRect(rm: *RenderManager, a: [2]f32, b: [2]f32, col: sdk.Color) void {
-    var mb = MeshBuilder.init(rm.mat_solid_no_depth, true, 4, 8);
+    var mb = MeshBuilder.init(rm.wh, rm.mat_solid_no_depth, true, 4, 8);
     defer mb.finish();
 
     mb.position(.{ .x = a[0], .y = a[1], .z = 0 });
@@ -493,7 +493,7 @@ pub fn drawRect(rm: *RenderManager, a: [2]f32, b: [2]f32, col: sdk.Color) void {
 }
 
 pub fn fillRect(rm: *RenderManager, a: [2]f32, b: [2]f32, col: sdk.Color) void {
-    var mb = MeshBuilder.init(rm.mat_solid_no_depth, false, 4, 6);
+    var mb = MeshBuilder.init(rm.wh, rm.mat_solid_no_depth, false, 4, 6);
     defer mb.finish();
 
     mb.position(.{ .x = a[0] * xpix, .y = a[1] * ypix, .z = 0 });
