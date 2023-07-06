@@ -1,8 +1,8 @@
 const std = @import("std");
 const sdk = @import("sdk");
 const surface = @import("surface.zig");
-const mods = @import("mods.zig");
 const hud = @import("hud.zig");
+const Wormhole = @import("Wormhole.zig");
 
 pub const THud = struct {
     pub const Part = union(enum) {
@@ -31,6 +31,8 @@ pub const THud = struct {
         var width: f32 = 0;
         var align_base: f32 = 0;
 
+        const wh = Wormhole.getInst();
+
         if (draw_pos != null) surface.setColor(line.color);
         for (line.parts) |p| switch (p) {
             .text => |str| {
@@ -38,7 +40,7 @@ pub const THud = struct {
                 width += surface.getTextLength(self.font, str);
             },
             .component => |info| {
-                if (mods.getMod(info.mod)) |mod| {
+                if (wh.mod_manager.get(info.mod)) |mod| {
                     if (mod.thud_components.get(info.name)) |comp| {
                         var buf: [64]u8 = undefined;
                         const size = comp.call(info.mod, slot, info.format, &buf, buf.len);

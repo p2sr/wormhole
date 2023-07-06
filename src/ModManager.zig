@@ -1,6 +1,12 @@
 const std = @import("std");
 const api = @import("api.zig");
 
+const ModManager = @This();
+const Wormhole = @import("Wormhole.zig");
+
+wh: *Wormhole,
+mods: std.StringHashMapUnmanaged(Mod),
+
 const ModSpec = struct {
     name: []const u8,
     version: std.SemanticVersion,
@@ -30,16 +36,13 @@ pub const Mod = struct {
     event_handlers: std.StringHashMap([]EventHandler),
 };
 
-var mods: std.StringHashMap(Mod) = undefined;
-var allocator: std.mem.Allocator = undefined;
-
-pub fn getMod(name: []const u8) ?Mod {
-    return mods.get(name);
+pub fn get(mm: *ModManager, name: []const u8) ?Mod {
+    return mm.mods.get(name);
 }
 
 pub const Iterator = struct {
     it: std.StringHashMap(Mod).Iterator,
-    const Elem = std.meta.Tuple(&.{ []const u8, Mod });
+    const Elem = struct { []const u8, Mod };
     pub fn next(self: *Iterator) ?Elem {
         if (self.it.next()) |ent| {
             return Elem{ ent.key_ptr.*, ent.value_ptr.* };
@@ -49,20 +52,18 @@ pub const Iterator = struct {
     }
 };
 
-pub fn iterator() Iterator {
-    return .{ .it = mods.iterator() };
+pub fn iterator(mm: *ModManager) Iterator {
+    return .{ .it = mm.mods.iterator() };
 }
 
-pub fn init(allocator1: std.mem.Allocator) !void {
-    allocator = allocator1;
-
-    var mod_list = std.ArrayList(Mod).init(allocator);
+pub fn init(wh: *Wormhole) !ModManager {
+    var mod_list = std.ArrayList(Mod).init(wh.gpa);
     defer mod_list.deinit();
 
     var dir = std.fs.cwd().openIterableDir("mods", .{}) catch |err| switch (err) {
         error.FileNotFound, error.NotDir => {
-            std.log.info("mods directory not found; not loading any mods", .{});
-            return;
+            std.log.err("mods directory not found", .{});
+            return error.NoModDir;
         },
         else => |e| return e,
     };
@@ -71,9 +72,9 @@ pub fn init(allocator1: std.mem.Allocator) !void {
     var dir_it = dir.iterate();
     while (try dir_it.next()) |ent| {
         if (ent.kind != .file) continue;
-        const path = try std.fs.path.join(allocator, &.{ "mods", ent.name });
-        defer allocator.free(path);
-        const mod_info = loadMod(path) catch |err| {
+        const path = try std.fs.path.join(wh.gpa, &.{ "mods", ent.name });
+        defer wh.gpa.free(path);
+        const mod_info = loadMod(path, wh) catch |err| {
             switch (err) {
                 error.MissingModInfo => std.log.err("Missing MOD_INFO in {s}", .{ent.name}),
                 error.BadModName => std.log.err("Bad name in {s}", .{ent.name}),
@@ -88,19 +89,20 @@ pub fn init(allocator1: std.mem.Allocator) !void {
         try mod_list.append(mod_info);
     }
 
-    mods = std.StringHashMap(Mod).init(allocator);
-    errdefer mods.deinit();
-
-    try validateMods(mod_list.items);
+    return .{
+        .wh = wh,
+        .mods = try validateMods(mod_list.items, wh),
+    };
 }
 
-pub fn deinit() void {
-    var it = mods.iterator();
+pub fn deinit(mm: *ModManager) void {
+    var it = mm.mods.iterator();
     while (it.next()) |kv| {
         kv.value_ptr.lib.close();
-        kv.value_ptr.arena.promote(allocator).deinit();
+        kv.value_ptr.arena.promote(mm.wh.gpa).deinit();
     }
-    mods.deinit();
+    mm.mods.deinit(mm.wh.gpa);
+    mm.* = undefined;
 }
 
 const ModInfoRaw = extern struct {
@@ -121,8 +123,8 @@ const ModInfoRaw = extern struct {
     event_handlers: ?[*:.{ .name = null, .cbk = null }]EventHandler,
 };
 
-fn loadMod(path: []const u8) !Mod {
-    var arena = std.heap.ArenaAllocator.init(allocator);
+fn loadMod(path: []const u8, wh: *Wormhole) !Mod {
+    var arena = std.heap.ArenaAllocator.init(wh.gpa);
     errdefer arena.deinit();
 
     var lib = try std.DynLib.open(path);
@@ -181,7 +183,7 @@ fn loadMod(path: []const u8) !Mod {
     }
 
     // This is temporary so we allocate it on the normal allocator
-    var event_handlers_al = std.StringHashMap(std.ArrayList(Mod.EventHandler)).init(allocator);
+    var event_handlers_al = std.StringHashMap(std.ArrayList(Mod.EventHandler)).init(wh.gpa);
     defer {
         var it = event_handlers_al.iterator();
         while (it.next()) |kv| {
@@ -202,7 +204,7 @@ fn loadMod(path: []const u8) !Mod {
             if (!res.found_existing) {
                 // These are also temporary so we allocate them on the
                 // normal allocator too
-                res.value_ptr.* = std.ArrayList(Mod.EventHandler).init(allocator);
+                res.value_ptr.* = std.ArrayList(Mod.EventHandler).init(wh.gpa);
             }
             try res.value_ptr.append(.{ ._cbk = raw[i].cbk.? });
         }
@@ -222,7 +224,7 @@ fn loadMod(path: []const u8) !Mod {
         }
     }
 
-    return Mod{
+    return .{
         .arena = arena.state,
         .lib = lib,
         .spec = spec,
@@ -240,11 +242,14 @@ fn parseDep(str: []const u8) !ModSpec {
     };
 }
 
-fn validateMods(mod_list: []Mod) !void {
+fn validateMods(mod_list: []Mod, wh: *Wormhole) !std.StringHashMapUnmanaged(Mod) {
     var err = false;
 
+    var mods: std.StringHashMapUnmanaged(Mod) = .{};
+    errdefer mods.deinit(wh.gpa);
+
     for (mod_list) |mod| {
-        const res = try mods.getOrPut(mod.spec.name);
+        const res = try mods.getOrPut(wh.gpa, mod.spec.name);
         if (res.found_existing) {
             std.log.err("Cannot load mod {s}; already loaded", .{
                 mod.spec.name,
@@ -292,6 +297,8 @@ fn validateMods(mod_list: []Mod) !void {
     for (mod_list) |mod| {
         std.log.info("  {s}", .{mod.spec.name});
     }
+
+    return mods;
 }
 
 fn compatibleWith(version: std.SemanticVersion, desired: std.SemanticVersion) bool {

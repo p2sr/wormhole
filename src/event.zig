@@ -1,10 +1,11 @@
 const std = @import("std");
-const mods = @import("mods.zig");
+const Wormhole = @import("Wormhole.zig");
 
 var allocator: std.mem.Allocator = undefined;
 
 fn trigger_i(ev_name: []const u8, data: ?*anyopaque) void {
-    var it = mods.iterator();
+    const wh = Wormhole.getInst();
+    var it = wh.mod_manager.iterator();
     while (it.next()) |mod| {
         if (mod[1].event_handlers.get(ev_name)) |handlers| {
             for (handlers) |h| {

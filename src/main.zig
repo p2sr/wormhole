@@ -29,8 +29,8 @@ fn load(_: *sdk.IServerPluginCallbacks, interfaceFactory: sdk.CreateInterfaceFn,
         return false;
     };
 
-    Wormhole.getInstUnchecked().init() catch |err| {
-        std.log.err("Error initializing Wormhole: {s}", .{@errorName(err)});
+    Wormhole.getInstUnchecked().load() catch |err| {
+        std.log.err("Error loading Wormhole: {s}", .{@errorName(err)});
         return false;
     };
 
@@ -39,7 +39,7 @@ fn load(_: *sdk.IServerPluginCallbacks, interfaceFactory: sdk.CreateInterfaceFn,
 
 fn unload(_: *sdk.IServerPluginCallbacks) callconv(Method) void {
     if (Wormhole.getInstUnchecked().load_state != .loaded) return;
-    Wormhole.getInstUnchecked().deinit();
+    Wormhole.getInstUnchecked().unload();
     tier0.ready = false;
 }
 

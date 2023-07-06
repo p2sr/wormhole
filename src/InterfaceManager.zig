@@ -93,6 +93,8 @@ pub fn deinit(im: *InterfaceManager) void {
     }
 
     im.hooked_tables.deinit(im.wh.gpa);
+
+    im.* = undefined;
 }
 
 fn copyVtable(comptime T: type, vtable: *const T, gpa: std.mem.Allocator, hooked_tables: *std.ArrayListUnmanaged([]VtableEntry)) !*T {

@@ -8,7 +8,7 @@ const assert = std.debug.assert;
 
 const Wormhole = @This();
 const InterfaceManager = @import("InterfaceManager.zig");
-const mods = @import("mods.zig");
+const ModManager = @import("ModManager.zig");
 const surface = @import("surface.zig");
 const thud = @import("thud.zig");
 const render_manager = @import("render_manager.zig");
@@ -62,13 +62,14 @@ gpa: std.mem.Allocator,
 resource_prefix: u32,
 
 interface_manager: InterfaceManager,
+mod_manager: ModManager,
 // TODO: transition other global state here
 
 var gpa_state: std.heap.GeneralPurposeAllocator(.{
     .stack_trace_frames = 8,
 }) = undefined;
 
-pub fn init(wh: *Wormhole) !void {
+pub fn load(wh: *Wormhole) !void {
     assert(wh.load_state == .unloaded);
     wh.load_state = .loading;
     errdefer wh.load_state = .unloaded;
@@ -90,8 +91,8 @@ pub fn init(wh: *Wormhole) !void {
 
     surface.init(wh.gpa);
 
-    try mods.init(wh.gpa);
-    errdefer mods.deinit();
+    wh.mod_manager = try ModManager.init(wh);
+    errdefer wh.mod_manager.deinit();
 
     try thud.init(wh.gpa);
     errdefer thud.deinit();
@@ -102,10 +103,12 @@ pub fn init(wh: *Wormhole) !void {
     wh.load_state = .loaded;
 }
 
-pub fn deinit(wh: *Wormhole) void {
+pub fn unload(wh: *Wormhole) void {
+    assert(wh.load_state == .loaded);
+
     render_manager.deinit();
     thud.deinit();
-    mods.deinit();
+    wh.mod_manager.deinit();
     wh.interface_manager.deinit();
 
     _ = gpa_state.deinit();
