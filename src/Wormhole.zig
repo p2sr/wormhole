@@ -54,7 +54,7 @@ load_state: LoadState,
 /// a BinnedAllocator for performance.
 gpa: std.mem.Allocator,
 
-/// This is a random value create when Wormhole loads and persisted throughout
+/// This is a random value created when Wormhole loads and persisted throughout
 /// the game's lifetime. Named resources such as textures should incorporate
 /// this value into their names. This prevents instance of Wormhole from
 /// fighting with each other across reloads.
