@@ -4,7 +4,7 @@ const fc = @import("fontconfig");
 const FontManager = @import("fontmanager").FontManager(FontTextureContext);
 const ifaces = &@import("interface.zig").ifaces;
 const MeshBuilder = @import("MeshBuilder.zig");
-const main = @import("main.zig");
+const Wormhole = @import("Wormhole.zig");
 
 var allocator: std.mem.Allocator = undefined;
 var texture_manager: TextureManager = undefined;
@@ -27,7 +27,7 @@ const FontTextureContext = struct {
     pub const RenderTexture = *const TextureManager.Texture;
     pub fn getRenderTexture(_: FontTextureContext, idx: u32) RenderTexture {
         var name_buf: [128]u8 = undefined;
-        const name = std.fmt.bufPrint(&name_buf, "_wh_{d}_font_page_{d}", .{ main.wh_resource_prefix, idx }) catch unreachable;
+        const name = std.fmt.bufPrint(&name_buf, "_wh_{d}_font_page_{d}", .{ Wormhole.getInst().resource_prefix, idx }) catch unreachable;
 
         for (texture_manager.textures.items) |*tex| {
             if (std.mem.eql(u8, tex.name, name)) {
@@ -39,17 +39,17 @@ const FontTextureContext = struct {
     }
     pub fn createTexture(_: FontTextureContext, idx: u32, w: u32, h: u32, data: []const u8) !void {
         var name_buf: [128]u8 = undefined;
-        const name = std.fmt.bufPrint(&name_buf, "_wh_{d}_font_page_{d}", .{ main.wh_resource_prefix, idx }) catch unreachable;
+        const name = std.fmt.bufPrint(&name_buf, "_wh_{d}_font_page_{d}", .{ Wormhole.getInst().resource_prefix, idx }) catch unreachable;
         try texture_manager.createTexture(name, w, h, data, false);
     }
     pub fn destroyTexture(_: FontTextureContext, idx: u32) void {
         var name_buf: [128]u8 = undefined;
-        const name = std.fmt.bufPrint(&name_buf, "_wh_{d}_font_page_{d}", .{ main.wh_resource_prefix, idx }) catch unreachable;
+        const name = std.fmt.bufPrint(&name_buf, "_wh_{d}_font_page_{d}", .{ Wormhole.getInst().resource_prefix, idx }) catch unreachable;
         texture_manager.destroyTexture(name);
     }
     pub fn updateTexture(_: FontTextureContext, idx: u32, x: u32, y: u32, w: u32, h: u32, data: []const u8) !void {
         var name_buf: [128]u8 = undefined;
-        const name = std.fmt.bufPrint(&name_buf, "_wh_{d}_font_page_{d}", .{ main.wh_resource_prefix, idx }) catch unreachable;
+        const name = std.fmt.bufPrint(&name_buf, "_wh_{d}_font_page_{d}", .{ Wormhole.getInst().resource_prefix, idx }) catch unreachable;
         try texture_manager.updateTexture(name, x, y, w, h, null);
         _ = data; // We know it's the same buffer - TODO should this arg even really exist?
     }

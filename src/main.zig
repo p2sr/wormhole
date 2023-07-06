@@ -1,5 +1,7 @@
 const std = @import("std");
 const sdk = @import("sdk");
+
+const Wormhole = @import("Wormhole.zig");
 const tier0 = @import("tier0.zig");
 const interface = @import("interface.zig");
 const mods = @import("mods.zig");
@@ -16,53 +18,6 @@ pub const std_options = struct {
     pub const logFn = @import("log.zig").log;
 };
 
-var gpa: std.heap.GeneralPurposeAllocator(.{
-    .stack_trace_frames = 8,
-}) = undefined;
-
-/// This is a random value created when Wormhole loads and persisted throughout the game's lifetime.
-/// Named resources such as textures should incorporate this value into their names. This prevents
-/// instances of Wormhole from fighting with each other across unloads/reloads.
-pub var wh_resource_prefix: u32 = undefined;
-
-fn init() !void {
-    gpa = .{};
-    errdefer _ = gpa.deinit();
-
-    std.os.getrandom(std.mem.asBytes(&wh_resource_prefix)) catch return error.RandomInitFailed;
-
-    const version = try @import("version.zig").getVersion(gpa.allocator());
-    // TODO: load offsets etc
-    _ = version;
-
-    // Always init tier0 first so we have logging
-    try tier0.init();
-
-    if (!sdk.init()) return error.SdkInitError;
-
-    try interface.init(gpa.allocator());
-    errdefer interface.deinit();
-
-    surface.init(gpa.allocator());
-
-    try mods.init(gpa.allocator());
-    errdefer mods.deinit();
-
-    try thud.init(gpa.allocator());
-    errdefer thud.deinit();
-
-    try render_manager.init(gpa.allocator());
-    errdefer render_manager.deinit();
-}
-
-fn deinit() void {
-    render_manager.deinit();
-    thud.deinit();
-    mods.deinit();
-    interface.deinit();
-    _ = gpa.deinit();
-}
-
 // Plugin callbacks below
 
 const Method = switch (@import("builtin").os.tag) {
@@ -70,27 +25,27 @@ const Method = switch (@import("builtin").os.tag) {
     else => std.builtin.CallingConvention.C,
 };
 
-// For some reason the game calls 'unload' if 'load' fails. We really don't
-// want this, so we just ignore calls to 'unload' unless we're fully loaded
-var loaded = false;
-
 fn load(_: *sdk.IServerPluginCallbacks, interfaceFactory: sdk.CreateInterfaceFn, gameServerFactory: sdk.CreateInterfaceFn) callconv(Method) bool {
     _ = interfaceFactory;
     _ = gameServerFactory;
 
-    init() catch |err| {
-        std.log.err("Error initializing Wormhole: {s}", .{@errorName(err)});
+    tier0.init() catch {
+        // We don't have tier0, so we can't report errors!
         return false;
     };
 
-    loaded = true;
+    Wormhole.getInst().init() catch |err| {
+        std.log.err("Error initializing Wormhole: {s}", .{@errorName(err)});
+        return false;
+    };
 
     return true;
 }
 
 fn unload(_: *sdk.IServerPluginCallbacks) callconv(Method) void {
-    if (!loaded) return;
-    deinit();
+    if (Wormhole.getInst().load_state != .loaded) return;
+    Wormhole.getInst().deinit();
+    tier0.ready = false;
 }
 
 fn pause(_: *sdk.IServerPluginCallbacks) callconv(Method) void {}

@@ -1,3 +1,12 @@
+//! This contains all references and links to the tier0 library. As a special
+//! case, tier0 is not a part of the main Wormhole state, instead containing its
+//! own global state. This is because tier0 is required for core logging
+//! behavior, so must always be initialized first so that further errors can
+//! trigger log output.
+//!
+//! tier0 functions should not be used directly. Instead, use `std.log`, whose
+//! logging function is implemented in log.zig.
+
 const std = @import("std");
 const sdk = @import("sdk");
 
