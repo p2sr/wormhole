@@ -3,8 +3,6 @@ const sdk = @import("sdk");
 const Wormhole = @import("Wormhole.zig");
 const event = @import("event.zig");
 
-var count: u8 = 0;
-
 const Method = switch (@import("builtin").os.tag) {
     .windows => std.builtin.CallingConvention.Thiscall,
     else => std.builtin.CallingConvention.C,

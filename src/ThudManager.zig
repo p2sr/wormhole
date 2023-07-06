@@ -1,6 +1,6 @@
 const std = @import("std");
 const sdk = @import("sdk");
-const surface = @import("surface.zig");
+const Surface = @import("Surface.zig");
 const hud = @import("hud.zig");
 const Wormhole = @import("Wormhole.zig");
 const ThudManager = @This();
@@ -26,7 +26,7 @@ const Thud = struct {
     };
 
     arena: std.heap.ArenaAllocator.State,
-    font: surface.Font,
+    font: Surface.Font,
     spacing: f32,
     padding: f32,
     lines: []Line,
@@ -35,11 +35,11 @@ const Thud = struct {
         var width: f32 = 0;
         var align_base: f32 = 0;
 
-        if (draw_pos != null) surface.setColor(line.color);
+        if (draw_pos != null) wh.surface.color = line.color;
         for (line.parts) |p| switch (p) {
             .text => |str| {
-                if (draw_pos) |pos| surface.drawText(self.font, pos + @Vector(2, f32){ width, 0 }, str);
-                width += surface.getTextLength(self.font, str);
+                if (draw_pos) |pos| wh.surface.drawText(self.font, pos + @Vector(2, f32){ width, 0 }, str);
+                width += wh.surface.getTextLength(self.font, str);
             },
             .component => |info| {
                 if (wh.mod_manager.get(info.mod)) |mod| {
@@ -54,14 +54,16 @@ const Thud = struct {
                             _ = comp.call(info.mod, slot, info.format, str.ptr, buf.len);
                         }
 
-                        if (draw_pos) |pos| surface.drawText(self.font, pos + @Vector(2, f32){ width, 0 }, str);
-                        width += surface.getTextLength(self.font, str);
+                        if (draw_pos) |pos| wh.surface.drawText(self.font, pos + @Vector(2, f32){ width, 0 }, str);
+                        width += wh.surface.getTextLength(self.font, str);
 
                         if (size > 64) wh.gpa.free(str);
                     }
                 }
             },
-            .color => |c| if (draw_pos != null) surface.setColor(c orelse line.color),
+            .color => |c| if (draw_pos != null) {
+                wh.surface.color = c orelse line.color;
+            },
             .align_ => |x| {
                 width = @max(width, @as(f32, @floatFromInt(x)) + align_base);
                 align_base = width;
@@ -77,7 +79,7 @@ const Thud = struct {
 
         for (self.lines, 0..) |line, i| {
             if (i > 0) height += self.spacing;
-            height += surface.getFontHeight(self.font);
+            height += wh.surface.getFontHeight(self.font);
 
             const w = self.evalLine(wh, slot, line, null) catch 0; // TODO
             if (w > width) width = w;
@@ -91,8 +93,8 @@ const Thud = struct {
 
     pub fn draw(self: *Thud, wh: *Wormhole, slot: u8) void {
         const size = self.calcSize(wh, slot);
-        surface.setColor(.{ .r = 0, .g = 0, .b = 0, .a = 192 });
-        surface.fillRect(.{ 0, 0 }, size);
+        wh.surface.color = .{ .r = 0, .g = 0, .b = 0, .a = 192 };
+        wh.surface.fillRect(.{ 0, 0 }, size);
 
         const x = self.padding;
         var y = self.padding;
@@ -100,7 +102,7 @@ const Thud = struct {
         for (self.lines, 0..) |line, i| {
             _ = self.evalLine(wh, slot, line, @Vector(2, f32){ x, y }) catch {}; // TODO
 
-            y += surface.getFontHeight(self.font);
+            y += wh.surface.getFontHeight(self.font);
             if (i > 0) y += self.spacing;
         }
     }

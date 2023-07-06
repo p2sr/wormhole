@@ -10,7 +10,7 @@ const Wormhole = @This();
 const InterfaceManager = @import("InterfaceManager.zig");
 const ModManager = @import("ModManager.zig");
 const ThudManager = @import("ThudManager.zig");
-const surface = @import("surface.zig");
+const Surface = @import("Surface.zig");
 const render_manager = @import("render_manager.zig");
 
 /// Gets the global Wormhole instance. Use of this function is discouraged, and
@@ -63,6 +63,7 @@ resource_prefix: u32,
 
 interface_manager: InterfaceManager,
 mod_manager: ModManager,
+surface: Surface,
 thud_manager: ThudManager,
 // TODO: transition other global state here
 
@@ -90,10 +91,10 @@ pub fn load(wh: *Wormhole) !void {
     wh.interface_manager = try InterfaceManager.init(wh);
     errdefer wh.interface_manager.deinit();
 
-    surface.init(wh.gpa);
-
     wh.mod_manager = try ModManager.init(wh);
     errdefer wh.mod_manager.deinit();
+
+    wh.surface = Surface.init(wh);
 
     wh.thud_manager = try ThudManager.init(wh);
     errdefer wh.thud_manager.deinit();

@@ -1,6 +1,5 @@
 const std = @import("std");
 const Wormhole = @import("Wormhole.zig");
-const surface = @import("surface.zig");
 
 pub fn Hud(comptime Context: type) type {
     return struct {
@@ -42,11 +41,11 @@ pub fn Hud(comptime Context: type) type {
                 break :blk .{ x, y };
             };
 
-            surface.units_per_pixel.* = 1000.0 / @as(f32, @floatFromInt(screen_size[1]));
+            wh.surface.units_per_pixel = 1000.0 / @as(f32, @floatFromInt(screen_size[1]));
 
-            const pos = self.position(wh, slot, screen_size, surface.units_per_pixel.*);
-            surface.origin.* = pos;
-            surface.scale.* = self.scale;
+            const pos = self.position(wh, slot, screen_size, wh.surface.units_per_pixel);
+            wh.surface.origin = pos;
+            wh.surface.scale = self.scale;
 
             self.ctx.draw(wh, slot);
         }
