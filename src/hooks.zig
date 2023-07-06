@@ -23,7 +23,7 @@ IEngineVGuiInternal: struct {
         var ret = orig.paint(self, mode);
 
         if (mode.ui_panels) {
-            @import("thud.zig").drawAll(0);
+            Wormhole.getInst().thud_manager.drawAll(0);
         }
 
         return ret;

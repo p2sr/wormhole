@@ -9,8 +9,8 @@ const assert = std.debug.assert;
 const Wormhole = @This();
 const InterfaceManager = @import("InterfaceManager.zig");
 const ModManager = @import("ModManager.zig");
+const ThudManager = @import("ThudManager.zig");
 const surface = @import("surface.zig");
-const thud = @import("thud.zig");
 const render_manager = @import("render_manager.zig");
 
 /// Gets the global Wormhole instance. Use of this function is discouraged, and
@@ -63,6 +63,7 @@ resource_prefix: u32,
 
 interface_manager: InterfaceManager,
 mod_manager: ModManager,
+thud_manager: ThudManager,
 // TODO: transition other global state here
 
 var gpa_state: std.heap.GeneralPurposeAllocator(.{
@@ -94,8 +95,8 @@ pub fn load(wh: *Wormhole) !void {
     wh.mod_manager = try ModManager.init(wh);
     errdefer wh.mod_manager.deinit();
 
-    try thud.init(wh.gpa);
-    errdefer thud.deinit();
+    wh.thud_manager = try ThudManager.init(wh);
+    errdefer wh.thud_manager.deinit();
 
     try render_manager.init(wh.gpa);
     errdefer render_manager.deinit();
@@ -107,7 +108,7 @@ pub fn unload(wh: *Wormhole) void {
     assert(wh.load_state == .loaded);
 
     render_manager.deinit();
-    thud.deinit();
+    wh.thud_manager.deinit();
     wh.mod_manager.deinit();
     wh.interface_manager.deinit();
 

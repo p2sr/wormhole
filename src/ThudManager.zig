@@ -3,8 +3,12 @@ const sdk = @import("sdk");
 const surface = @import("surface.zig");
 const hud = @import("hud.zig");
 const Wormhole = @import("Wormhole.zig");
+const ThudManager = @This();
 
-pub const THud = struct {
+wh: *Wormhole,
+thuds: []hud.Hud(Thud),
+
+const Thud = struct {
     pub const Part = union(enum) {
         text: []u8,
         component: struct {
@@ -27,11 +31,9 @@ pub const THud = struct {
     padding: f32,
     lines: []Line,
 
-    fn evalLine(self: *THud, slot: u8, line: Line, draw_pos: ?@Vector(2, f32)) !f32 {
+    fn evalLine(self: *Thud, wh: *Wormhole, slot: u8, line: Line, draw_pos: ?@Vector(2, f32)) !f32 {
         var width: f32 = 0;
         var align_base: f32 = 0;
-
-        const wh = Wormhole.getInst();
 
         if (draw_pos != null) surface.setColor(line.color);
         for (line.parts) |p| switch (p) {
@@ -48,14 +50,14 @@ pub const THud = struct {
                         if (size <= 64) {
                             str = buf[0..size];
                         } else {
-                            str = try allocator.alloc(u8, size);
+                            str = try wh.gpa.alloc(u8, size);
                             _ = comp.call(info.mod, slot, info.format, str.ptr, buf.len);
                         }
 
                         if (draw_pos) |pos| surface.drawText(self.font, pos + @Vector(2, f32){ width, 0 }, str);
                         width += surface.getTextLength(self.font, str);
 
-                        if (size > 64) allocator.free(str);
+                        if (size > 64) wh.gpa.free(str);
                     }
                 }
             },
@@ -69,7 +71,7 @@ pub const THud = struct {
         return width;
     }
 
-    pub fn calcSize(self: *THud, slot: u8) @Vector(2, f32) {
+    pub fn calcSize(self: *Thud, wh: *Wormhole, slot: u8) @Vector(2, f32) {
         var width: f32 = 0;
         var height: f32 = 0;
 
@@ -77,7 +79,7 @@ pub const THud = struct {
             if (i > 0) height += self.spacing;
             height += surface.getFontHeight(self.font);
 
-            const w = self.evalLine(slot, line, null) catch 0; // TODO
+            const w = self.evalLine(wh, slot, line, null) catch 0; // TODO
             if (w > width) width = w;
         }
 
@@ -87,16 +89,16 @@ pub const THud = struct {
         };
     }
 
-    pub fn draw(self: *THud, slot: u8) void {
-        const size = self.calcSize(slot);
+    pub fn draw(self: *Thud, wh: *Wormhole, slot: u8) void {
+        const size = self.calcSize(wh, slot);
         surface.setColor(.{ .r = 0, .g = 0, .b = 0, .a = 192 });
-        surface.fillRect(@Vector(2, f32){ 0, 0 }, size);
+        surface.fillRect(.{ 0, 0 }, size);
 
         const x = self.padding;
         var y = self.padding;
 
         for (self.lines, 0..) |line, i| {
-            _ = self.evalLine(slot, line, @Vector(2, f32){ x, y }) catch {}; // TODO
+            _ = self.evalLine(wh, slot, line, @Vector(2, f32){ x, y }) catch {}; // TODO
 
             y += surface.getFontHeight(self.font);
             if (i > 0) y += self.spacing;
@@ -123,8 +125,8 @@ fn Parser(comptime Reader: type) type {
             return c;
         }
 
-        pub fn parse(self: *Self) ![]THud.Part {
-            var parts = std.ArrayList(THud.Part).init(self.allocator);
+        pub fn parse(self: *Self) ![]Thud.Part {
+            var parts = std.ArrayList(Thud.Part).init(self.allocator);
             var str = std.ArrayList(u8).init(self.allocator);
 
             while (true) {
@@ -151,7 +153,7 @@ fn Parser(comptime Reader: type) type {
             return parts.toOwnedSlice();
         }
 
-        fn parseExpansion(self: *Self) !THud.Part {
+        fn parseExpansion(self: *Self) !Thud.Part {
             var mod = std.ArrayList(u8).init(self.allocator);
             defer mod.deinit();
 
@@ -185,7 +187,7 @@ fn Parser(comptime Reader: type) type {
 
             if (mod.items.len > 0) {
                 const format1 = try format.toOwnedSliceSentinel(0);
-                return THud.Part{ .component = .{
+                return Thud.Part{ .component = .{
                     .mod = try mod.toOwnedSlice(),
                     .name = try component.toOwnedSlice(),
                     .format = format1,
@@ -196,14 +198,14 @@ fn Parser(comptime Reader: type) type {
 
             if (std.mem.eql(u8, component.items, "color")) {
                 if (std.mem.eql(u8, format.items, "reset")) {
-                    return THud.Part{ .color = null };
+                    return Thud.Part{ .color = null };
                 }
-                return THud.Part{ .color = try parseColor(format.items) };
+                return Thud.Part{ .color = try parseColor(format.items) };
             }
 
             if (std.mem.eql(u8, component.items, "align")) {
                 const x = parseUint(format.items) catch return error.BadAlign;
-                return THud.Part{ .align_ = x };
+                return Thud.Part{ .align_ = x };
             }
 
             return error.UnknownExpansion;
@@ -244,17 +246,12 @@ fn Parser(comptime Reader: type) type {
     };
 }
 
-fn parser(allocator1: std.mem.Allocator, r: anytype) Parser(@TypeOf(r)) {
-    return .{ .allocator = allocator1, .reader = r };
+fn parser(allocator: std.mem.Allocator, r: anytype) Parser(@TypeOf(r)) {
+    return .{ .allocator = allocator, .reader = r };
 }
 
-var thuds: []hud.Hud(THud) = undefined;
-var allocator: std.mem.Allocator = undefined;
-
-pub fn init(allocator1: std.mem.Allocator) !void {
+pub fn init(wh: *Wormhole) !ThudManager {
     @setEvalBranchQuota(10000);
-
-    allocator = allocator1;
 
     const RawInfo = struct {
         font_name: []u8,
@@ -269,23 +266,23 @@ pub fn init(allocator1: std.mem.Allocator) !void {
         lines: [][]u8,
     };
 
-    var file_contents = try std.fs.cwd().readFileAlloc(allocator, "thud.json", std.math.maxInt(usize));
-    defer allocator.free(file_contents);
+    var file_contents = try std.fs.cwd().readFileAlloc(wh.gpa, "thud.json", std.math.maxInt(usize));
+    defer wh.gpa.free(file_contents);
 
-    const cfg = try std.json.parseFromSlice([]RawInfo, allocator, file_contents, .{});
+    const cfg = try std.json.parseFromSlice([]RawInfo, wh.gpa, file_contents, .{});
     defer cfg.deinit();
 
-    var huds = std.ArrayList(hud.Hud(THud)).init(allocator);
+    var huds = std.ArrayList(hud.Hud(Thud)).init(wh.gpa);
     defer {
-        for (huds.items) |h| h.ctx.arena.promote(allocator).deinit();
+        for (huds.items) |h| h.ctx.arena.promote(wh.gpa).deinit();
         huds.deinit();
     }
 
     for (cfg.value) |raw| {
-        var arena = std.heap.ArenaAllocator.init(allocator);
+        var arena = std.heap.ArenaAllocator.init(wh.gpa);
         errdefer arena.deinit();
 
-        var lines = std.ArrayList(THud.Line).init(arena.allocator());
+        var lines = std.ArrayList(Thud.Line).init(arena.allocator());
 
         for (raw.lines) |line| {
             var s = std.io.fixedBufferStream(line);
@@ -323,14 +320,17 @@ pub fn init(allocator1: std.mem.Allocator) !void {
         });
     }
 
-    thuds = try huds.toOwnedSlice();
+    return .{
+        .wh = wh,
+        .thuds = try huds.toOwnedSlice(),
+    };
 }
 
-pub fn deinit() void {
-    for (thuds) |*h| h.ctx.arena.promote(allocator).deinit();
-    allocator.free(thuds);
+pub fn deinit(tm: *ThudManager) void {
+    for (tm.thuds) |*h| h.ctx.arena.promote(tm.wh.gpa).deinit();
+    tm.wh.gpa.free(tm.thuds);
 }
 
-pub fn drawAll(slot: u8) void {
-    for (thuds) |*h| h.draw(slot);
+pub fn drawAll(tm: *ThudManager, slot: u8) void {
+    for (tm.thuds) |*h| h.draw(tm.wh, slot);
 }
