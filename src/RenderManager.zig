@@ -4,31 +4,34 @@ const fc = @import("fontconfig");
 const FontManager = @import("fontmanager").FontManager(FontTextureContext);
 const MeshBuilder = @import("MeshBuilder.zig");
 const Wormhole = @import("Wormhole.zig");
+const RenderManager = @This();
 
-var allocator: std.mem.Allocator = undefined;
-var texture_manager: TextureManager = undefined;
-var font_manager: FontManager = undefined;
-var default_font_name: []const u8 = undefined;
+wh: *Wormhole,
+texture_manager: TextureManager,
+font_manager: FontManager,
+available_fonts: std.StringHashMapUnmanaged(FontState),
+default_font_name: []const u8,
 
-var mat_solid_depth: *sdk.IMaterial = undefined;
-var mat_solid_no_depth: *sdk.IMaterial = undefined;
+mat_solid_depth: *sdk.IMaterial,
+mat_solid_no_depth: *sdk.IMaterial,
 
-// TODO deinit
-var font_names: std.StringHashMapUnmanaged(struct {
+const FontState = struct {
     file: [:0]const u8,
     id: ?FontManager.FontId,
-}) = .{};
+};
 
 const xpix = 1.0 / 2560.0;
 const ypix = 1.0 / 1080.0;
 
 const FontTextureContext = struct {
-    pub const RenderTexture = *const TextureManager.Texture;
-    pub fn getRenderTexture(_: FontTextureContext, idx: u32) RenderTexture {
-        var name_buf: [128]u8 = undefined;
-        const name = std.fmt.bufPrint(&name_buf, "_wh_{d}_font_page_{d}", .{ Wormhole.getInst().resource_prefix, idx }) catch unreachable;
+    wh: *Wormhole,
 
-        for (texture_manager.textures.items) |*tex| {
+    pub const RenderTexture = *const TextureManager.Texture;
+    pub fn getRenderTexture(ctx: FontTextureContext, idx: u32) RenderTexture {
+        var name_buf: [128]u8 = undefined;
+        const name = std.fmt.bufPrint(&name_buf, "_wh_{d}_font_page_{d}", .{ ctx.wh.resource_prefix, idx }) catch unreachable;
+
+        for (ctx.wh.render_manager.texture_manager.textures.items) |*tex| {
             if (std.mem.eql(u8, tex.name, name)) {
                 return tex;
             }
@@ -36,27 +39,28 @@ const FontTextureContext = struct {
 
         unreachable; // font texture not found
     }
-    pub fn createTexture(_: FontTextureContext, idx: u32, w: u32, h: u32, data: []const u8) !void {
+    pub fn createTexture(ctx: FontTextureContext, idx: u32, w: u32, h: u32, data: []const u8) !void {
         var name_buf: [128]u8 = undefined;
-        const name = std.fmt.bufPrint(&name_buf, "_wh_{d}_font_page_{d}", .{ Wormhole.getInst().resource_prefix, idx }) catch unreachable;
-        try texture_manager.createTexture(name, w, h, data, false);
+        const name = std.fmt.bufPrint(&name_buf, "_wh_{d}_font_page_{d}", .{ ctx.wh.resource_prefix, idx }) catch unreachable;
+        try ctx.wh.render_manager.texture_manager.createTexture(name, w, h, data, false);
     }
-    pub fn destroyTexture(_: FontTextureContext, idx: u32) void {
+    pub fn destroyTexture(ctx: FontTextureContext, idx: u32) void {
         var name_buf: [128]u8 = undefined;
-        const name = std.fmt.bufPrint(&name_buf, "_wh_{d}_font_page_{d}", .{ Wormhole.getInst().resource_prefix, idx }) catch unreachable;
-        texture_manager.destroyTexture(name);
+        const name = std.fmt.bufPrint(&name_buf, "_wh_{d}_font_page_{d}", .{ ctx.wh.resource_prefix, idx }) catch unreachable;
+        ctx.wh.render_manager.texture_manager.destroyTexture(name);
     }
-    pub fn updateTexture(_: FontTextureContext, idx: u32, x: u32, y: u32, w: u32, h: u32, data: []const u8) !void {
+    pub fn updateTexture(ctx: FontTextureContext, idx: u32, x: u32, y: u32, w: u32, h: u32, data: []const u8) !void {
         var name_buf: [128]u8 = undefined;
-        const name = std.fmt.bufPrint(&name_buf, "_wh_{d}_font_page_{d}", .{ Wormhole.getInst().resource_prefix, idx }) catch unreachable;
-        try texture_manager.updateTexture(name, x, y, w, h, null);
+        const name = std.fmt.bufPrint(&name_buf, "_wh_{d}_font_page_{d}", .{ ctx.wh.resource_prefix, idx }) catch unreachable;
+        try ctx.wh.render_manager.texture_manager.updateTexture(name, x, y, w, h, null);
         _ = data; // We know it's the same buffer - TODO should this arg even really exist?
     }
 };
 
 const TextureManager = struct {
+    wh: *Wormhole,
     textures: std.ArrayList(Texture),
-    regenerator: Regenerator = .{},
+    regenerator: Regenerator,
 
     const Texture = struct {
         name: [:0]u8,
@@ -70,12 +74,12 @@ const TextureManager = struct {
         mat_depth: *sdk.IMaterial,
         mat_no_depth: *sdk.IMaterial,
 
-        fn deinit(tex: Texture) void {
+        fn deinit(tex: Texture, gpa: std.mem.Allocator) void {
             switch (tex.buf) {
-                .owned => |buf| allocator.free(buf),
+                .owned => |buf| gpa.free(buf),
                 .external => {},
             }
-            allocator.free(tex.name);
+            gpa.free(tex.name);
             // FIXME: the material sometimes has an extra reference, I suspect
             // because it's bound. TODO: unbind the material!!
             tex.mat_depth.decrementReferenceCount();
@@ -84,21 +88,23 @@ const TextureManager = struct {
         }
     };
 
-    const Regenerator = struct {
+    const Regenerator = extern struct {
         const Method = switch (@import("builtin").os.tag) {
             .windows => std.builtin.CallingConvention.Thiscall,
             else => std.builtin.CallingConvention.C,
         };
 
-        vtable: *const struct {
+        vtable: *const extern struct {
             regenerateTextureBits: *const fn (*Regenerator, *sdk.ITexture, *sdk.IVtfTexture, *sdk.Rect) callconv(Method) void = &Regenerator.regenerateTextureBits,
             release: *const fn (*Regenerator) callconv(Method) void = &Regenerator.release,
             hasPreallocatedScratchTexture: *const fn (*const Regenerator) callconv(Method) bool = &Regenerator.hasPreallocatedScratchTexture,
             getPreallocatedScratchTexture: *const fn (*const Regenerator) callconv(Method) ?*sdk.IVtfTexture = &Regenerator.getPreallocatedScratchTexture,
         } = &.{},
 
-        fn regenerateTextureBits(_: *Regenerator, matsys_tex: *sdk.ITexture, vtf_tex: *sdk.IVtfTexture, _: *sdk.Rect) callconv(Method) void {
-            const tex = for (texture_manager.textures.items) |*tex| {
+        wh: *Wormhole,
+
+        fn regenerateTextureBits(ctx: *Regenerator, matsys_tex: *sdk.ITexture, vtf_tex: *sdk.IVtfTexture, _: *sdk.Rect) callconv(Method) void {
+            const tex = for (ctx.wh.render_manager.texture_manager.textures.items) |*tex| {
                 if (tex.matsys_tex == matsys_tex) {
                     break tex;
                 }
@@ -126,24 +132,26 @@ const TextureManager = struct {
         }
     };
 
-    fn init() TextureManager {
+    fn init(wh: *Wormhole) TextureManager {
         return .{
-            .textures = std.ArrayList(Texture).init(allocator),
+            .wh = wh,
+            .textures = std.ArrayList(Texture).init(wh.gpa),
+            .regenerator = .{ .wh = wh },
         };
     }
 
     fn deinit(self: TextureManager) void {
         for (self.textures.items) |tex| {
-            tex.deinit();
+            tex.deinit(self.wh.gpa);
         }
         self.textures.deinit();
     }
 
     pub fn createTexture(self: *TextureManager, name: []const u8, w: u32, h: u32, init_data: []const u8, replicate_data: bool) !void {
-        const name_owned = try allocator.dupeZ(u8, name);
-        errdefer allocator.free(name_owned);
+        const name_owned = try self.wh.gpa.dupeZ(u8, name);
+        errdefer self.wh.gpa.free(name_owned);
 
-        const IMaterialSystem = Wormhole.getInst().interface_manager.ifaces.IMaterialSystem;
+        const IMaterialSystem = self.wh.interface_manager.ifaces.IMaterialSystem;
         const matsys_tex = IMaterialSystem.createProceduralTexture(name_owned.ptr, "Wormhole textures", @intCast(w), @intCast(h), .bgra8888, .{
             .clamp_s = true,
             .clamp_t = true,
@@ -155,15 +163,15 @@ const TextureManager = struct {
 
         matsys_tex.setTextureRegenerator(@ptrCast(&self.regenerator), true);
 
-        const mat_depth = try createTexMaterial(name, false);
+        const mat_depth = try self.createTexMaterial(name, false);
         errdefer mat_depth.decrementReferenceCount();
 
-        const mat_no_depth = try createTexMaterial(name, true);
+        const mat_no_depth = try self.createTexMaterial(name, true);
         errdefer mat_no_depth.decrementReferenceCount();
 
         if (replicate_data) {
-            const data = try allocator.dupe(u8, init_data);
-            errdefer allocator.free(data);
+            const data = try self.wh.gpa.dupe(u8, init_data);
+            errdefer self.wh.gpa.free(data);
 
             try self.textures.append(.{
                 .name = name_owned,
@@ -192,7 +200,7 @@ const TextureManager = struct {
     pub fn destroyTexture(self: *TextureManager, name: []const u8) void {
         for (self.textures.items, 0..) |tex, i| {
             if (std.mem.eql(u8, tex.name, name)) {
-                tex.deinit();
+                tex.deinit(self.wh.gpa);
                 _ = self.textures.swapRemove(i);
                 return;
             }
@@ -236,15 +244,15 @@ const TextureManager = struct {
         }, 0);
     }
 
-    fn createTexMaterial(tex_name: []const u8, no_depth: bool) !*sdk.IMaterial {
-        const mat_name = try std.fmt.allocPrintZ(allocator, "{s}_mat_{s}", .{ tex_name, if (no_depth) "no_depth" else "depth" });
-        defer allocator.free(mat_name);
+    fn createTexMaterial(tm: TextureManager, tex_name: []const u8, no_depth: bool) !*sdk.IMaterial {
+        const mat_name = try std.fmt.allocPrintZ(tm.wh.gpa, "{s}_mat_{s}", .{ tex_name, if (no_depth) "no_depth" else "depth" });
+        defer tm.wh.gpa.free(mat_name);
 
-        return createMaterial(mat_name, tex_name, no_depth);
+        return createMaterial(tm.wh, mat_name, tex_name, no_depth);
     }
 };
 
-fn createMaterial(mat_name: [:0]const u8, tex_name: ?[]const u8, no_depth: bool) !*sdk.IMaterial {
+fn createMaterial(wh: *Wormhole, mat_name: [:0]const u8, tex_name: ?[]const u8, no_depth: bool) !*sdk.IMaterial {
     const kv = try sdk.KeyValues.init("UnlitGeneric");
     errdefer kv.deinit();
     try kv.setInt("$vertexcolor", 1);
@@ -253,15 +261,13 @@ fn createMaterial(mat_name: [:0]const u8, tex_name: ?[]const u8, no_depth: bool)
     if (no_depth) try kv.setInt("$ignorez", 1);
     if (tex_name) |tex| try kv.setString("$basetexture", tex);
 
-    const IMaterialSystem = Wormhole.getInst().interface_manager.ifaces.IMaterialSystem;
+    const IMaterialSystem = wh.interface_manager.ifaces.IMaterialSystem;
     return IMaterialSystem.createMaterial(mat_name.ptr, kv) orelse error.MaterialInitError;
 }
 
-pub fn init(allocator1: std.mem.Allocator) !void {
-    allocator = allocator1;
-
-    texture_manager = TextureManager.init();
-    errdefer texture_manager.deinit();
+pub fn init(wh: *Wormhole) !RenderManager {
+    var tm = TextureManager.init(wh);
+    errdefer tm.deinit();
 
     const kv = try sdk.KeyValues.init("UnlitGeneric");
     errdefer kv.deinit();
@@ -269,11 +275,14 @@ pub fn init(allocator1: std.mem.Allocator) !void {
     try kv.setInt("$vertexalpha", 1);
     try kv.setInt("$translucent", 1);
     try kv.setInt("$ignorez", 1);
-    mat_solid_depth = try createMaterial("_wh_solid_depth", null, false);
-    mat_solid_no_depth = try createMaterial("_wh_solid_no_depth", null, true);
+    const mat_solid_depth = try createMaterial(wh, "_wh_solid_depth", null, false);
+    const mat_solid_no_depth = try createMaterial(wh, "_wh_solid_no_depth", null, true);
 
-    font_manager = try FontManager.init(allocator, .{}, .{});
+    var font_manager = try FontManager.init(wh.gpa, .{ .wh = wh }, .{});
     errdefer font_manager.deinit();
+
+    var fonts: std.StringHashMapUnmanaged(FontState) = .{};
+    errdefer fonts.deinit(wh.gpa);
 
     const conf = try fc.FontConfig.init();
 
@@ -286,21 +295,21 @@ pub fn init(allocator1: std.mem.Allocator) !void {
     const font_set = try conf.fontList(pat, obj_set);
     defer font_set.deinit();
 
-    var found_default: bool = false;
+    var default_font_name: ?[]const u8 = null;
     for (font_set.fonts()) |font| {
         const family = font.getProperty(.family, 0) catch continue;
         const file = font.getProperty(.file, 0) catch continue;
 
-        if (font_names.contains(family)) continue;
+        if (fonts.contains(family)) continue;
 
-        const family_owned = try allocator.dupe(u8, family);
-        const file_owned = try allocator.dupeZ(u8, file);
-        try font_names.put(allocator, family_owned, .{
+        const family_owned = try wh.gpa.dupe(u8, family);
+        const file_owned = try wh.gpa.dupeZ(u8, file);
+        try fonts.put(wh.gpa, family_owned, .{
             .file = file_owned,
             .id = null,
         });
 
-        if (!found_default) {
+        if (default_font_name == null) {
             for ([_][]const u8{
                 "DejaVu Sans",
                 "Segoe UI",
@@ -309,58 +318,67 @@ pub fn init(allocator1: std.mem.Allocator) !void {
                 "Helvetica Neue",
             }) |name| {
                 if (std.mem.eql(u8, family, name)) {
-                    found_default = true;
                     default_font_name = name;
                 }
             }
         }
     }
 
-    if (!found_default) return error.NoDefaultFont;
+    const default = default_font_name orelse return error.NoDefaultFont;
 
     std.log.debug("Initialized render manager", .{});
-    std.log.debug("Using default font {s}", .{default_font_name});
+    std.log.debug("Using default font {s}", .{default});
+
+    return .{
+        .wh = wh,
+        .texture_manager = tm,
+        .font_manager = font_manager,
+        .available_fonts = fonts,
+        .default_font_name = default,
+        .mat_solid_depth = mat_solid_depth,
+        .mat_solid_no_depth = mat_solid_no_depth,
+    };
 }
 
-pub fn deinit() void {
-    font_manager.deinit();
+pub fn deinit(rm: *RenderManager) void {
+    rm.font_manager.deinit();
 
     {
-        var it = font_names.iterator();
+        var it = rm.available_fonts.iterator();
         while (it.next()) |kv| {
-            allocator.free(kv.key_ptr.*);
-            allocator.free(kv.value_ptr.file);
+            rm.wh.gpa.free(kv.key_ptr.*);
+            rm.wh.gpa.free(kv.value_ptr.file);
         }
-        font_names.deinit(allocator);
+        rm.available_fonts.deinit(rm.wh.gpa);
     }
 
-    mat_solid_depth.decrementReferenceCount();
-    mat_solid_depth.decrementReferenceCount(); // TODO
-    mat_solid_depth.deleteIfUnreferenced();
-    mat_solid_no_depth.decrementReferenceCount();
-    mat_solid_no_depth.decrementReferenceCount(); // TODO
-    mat_solid_no_depth.deleteIfUnreferenced();
+    rm.mat_solid_depth.decrementReferenceCount();
+    rm.mat_solid_depth.deleteIfUnreferenced();
+    rm.mat_solid_no_depth.decrementReferenceCount();
+    rm.mat_solid_no_depth.deleteIfUnreferenced();
 
-    texture_manager.deinit();
+    rm.texture_manager.deinit();
+
+    rm.* = undefined;
 }
 
-fn getFont(name: []const u8) !FontManager.FontId {
-    const ptr = font_names.getPtr(name) orelse font_names.getPtr(default_font_name).?;
+fn getFont(rm: *RenderManager, name: []const u8) !FontManager.FontId {
+    const ptr = rm.available_fonts.getPtr(name) orelse rm.available_fonts.getPtr(rm.default_font_name).?;
     if (ptr.id) |id| return id;
-    ptr.id = try font_manager.registerFont(ptr.file, 0);
+    ptr.id = try rm.font_manager.registerFont(ptr.file, 0);
     return ptr.id.?;
 }
 
-pub fn drawText(pos: [2]f32, font: []const u8, size: u32, col: sdk.Color, str: []const u8) !void {
-    const font_id = try getFont(font);
+pub fn drawText(rm: *RenderManager, pos: [2]f32, font: []const u8, size: u32, col: sdk.Color, str: []const u8) !void {
+    const font_id = try rm.getFont(font);
 
     var x: f32 = pos[0] * xpix;
     var y: f32 = pos[1] * ypix;
 
-    const size_info = try font_manager.sizeInfo(font_id, size, null);
+    const size_info = try rm.font_manager.sizeInfo(font_id, size, null);
     y += @as(f32, @floatFromInt(size_info.ascender)) * ypix / 64.0;
 
-    var it = try font_manager.glyphIterator(font_id, size, null, str);
+    var it = try rm.font_manager.glyphIterator(font_id, size, null, str);
     defer it.deinit();
 
     var cur_mat: ?*sdk.IMaterial = null;
@@ -415,10 +433,10 @@ pub fn drawText(pos: [2]f32, font: []const u8, size: u32, col: sdk.Color, str: [
     }
 }
 
-pub fn textLength(font: []const u8, size: u32, str: []const u8) !u32 {
-    const font_id = try getFont(font);
+pub fn textLength(rm: *RenderManager, font: []const u8, size: u32, str: []const u8) !u32 {
+    const font_id = try rm.getFont(font);
 
-    var it = try font_manager.glyphIterator(font_id, size, null, str);
+    var it = try rm.font_manager.glyphIterator(font_id, size, null, str);
     defer it.deinit();
 
     var cur: i32 = 0;
@@ -433,13 +451,13 @@ pub fn textLength(font: []const u8, size: u32, str: []const u8) !u32 {
     return @intCast(max - min);
 }
 
-pub fn sizeInfo(font: []const u8, size: u32) !@TypeOf(font_manager).SizeInfo {
-    const font_id = try getFont(font);
-    return font_manager.sizeInfo(font_id, size, null);
+pub fn sizeInfo(rm: *RenderManager, font: []const u8, size: u32) !FontManager.SizeInfo {
+    const font_id = try rm.getFont(font);
+    return rm.font_manager.sizeInfo(font_id, size, null);
 }
 
-pub fn drawRect(a: [2]f32, b: [2]f32, col: sdk.Color) void {
-    var mb = MeshBuilder.init(mat_solid_no_depth, true, 4, 8);
+pub fn drawRect(rm: *RenderManager, a: [2]f32, b: [2]f32, col: sdk.Color) void {
+    var mb = MeshBuilder.init(rm.mat_solid_no_depth, true, 4, 8);
     defer mb.finish();
 
     mb.position(.{ .x = a[0], .y = a[1], .z = 0 });
@@ -474,8 +492,8 @@ pub fn drawRect(a: [2]f32, b: [2]f32, col: sdk.Color) void {
     mb.index(5);
 }
 
-pub fn fillRect(a: [2]f32, b: [2]f32, col: sdk.Color) void {
-    var mb = MeshBuilder.init(mat_solid_no_depth, false, 4, 6);
+pub fn fillRect(rm: *RenderManager, a: [2]f32, b: [2]f32, col: sdk.Color) void {
+    var mb = MeshBuilder.init(rm.mat_solid_no_depth, false, 4, 6);
     defer mb.finish();
 
     mb.position(.{ .x = a[0] * xpix, .y = a[1] * ypix, .z = 0 });

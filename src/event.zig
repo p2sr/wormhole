@@ -1,8 +1,6 @@
 const std = @import("std");
 const Wormhole = @import("Wormhole.zig");
 
-var allocator: std.mem.Allocator = undefined;
-
 fn trigger_i(ev_name: []const u8, data: ?*anyopaque) void {
     const wh = Wormhole.getInst();
     var it = wh.mod_manager.iterator();
@@ -20,8 +18,9 @@ fn trigger_i(ev_name: []const u8, data: ?*anyopaque) void {
 
 pub fn trigger(mod: ?[]const u8, name: []const u8, data: ?*anyopaque) void {
     if (mod) |m| {
-        const ev_name = allocator.alloc(u8, name.len + m.len + 1) catch unreachable; // TODO
-        defer allocator.free(ev_name);
+        const gpa = Wormhole.getInst().gpa;
+        const ev_name = gpa.alloc(u8, name.len + m.len + 1) catch unreachable; // TODO
+        defer gpa.free(ev_name);
 
         std.mem.copy(u8, ev_name[0..name.len], m);
         ev_name[name.len] = '.';

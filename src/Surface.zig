@@ -1,6 +1,5 @@
 const std = @import("std");
 const sdk = @import("sdk");
-const render_manager = @import("render_manager.zig");
 const Surface = @This();
 const Wormhole = @import("Wormhole.zig");
 
@@ -30,28 +29,28 @@ pub fn init(wh: *Wormhole) Surface {
 pub fn drawRect(surf: Surface, a: @Vector(2, f32), b: @Vector(2, f32)) void {
     const a1 = surf.translate(a);
     const b1 = surf.translate(b);
-    render_manager.drawRect(@min(a1, b1), @max(a1, b1), surf.color);
+    surf.wh.render_manager.drawRect(@min(a1, b1), @max(a1, b1), surf.color);
 }
 
 pub fn fillRect(surf: Surface, a: @Vector(2, f32), b: @Vector(2, f32)) void {
     const a1 = surf.translate(a);
     const b1 = surf.translate(b);
-    render_manager.fillRect(@min(a1, b1), @max(a1, b1), surf.color);
+    surf.wh.render_manager.fillRect(@min(a1, b1), @max(a1, b1), surf.color);
 }
 
 pub fn getFontHeight(surf: Surface, f: Font) f32 {
     const size: u32 = @intFromFloat(f.size * surf.scale / surf.units_per_pixel * 64.0);
-    const info = render_manager.sizeInfo(f.name, size) catch unreachable;
+    const info = surf.wh.render_manager.sizeInfo(f.name, size) catch unreachable;
     return @as(f32, @floatFromInt(info.line_height)) / surf.scale * surf.units_per_pixel / 64.0;
 }
 
 pub fn getTextLength(surf: Surface, f: Font, str: []const u8) f32 {
     const size: u32 = @intFromFloat(f.size * surf.scale / surf.units_per_pixel * 64.0);
-    const len = render_manager.textLength(f.name, size, str) catch unreachable;
+    const len = surf.wh.render_manager.textLength(f.name, size, str) catch unreachable;
     return @as(f32, @floatFromInt(len)) / surf.scale * surf.units_per_pixel / 64.0;
 }
 
 pub fn drawText(surf: Surface, f: Font, pos: @Vector(2, f32), str: []const u8) void {
     const size: u32 = @intFromFloat(f.size * surf.scale / surf.units_per_pixel * 64.0);
-    render_manager.drawText(surf.translate(pos), f.name, size, surf.color, str) catch unreachable;
+    surf.wh.render_manager.drawText(surf.translate(pos), f.name, size, surf.color, str) catch unreachable;
 }
