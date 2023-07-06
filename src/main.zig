@@ -3,11 +3,6 @@ const sdk = @import("sdk");
 
 const Wormhole = @import("Wormhole.zig");
 const tier0 = @import("tier0.zig");
-const interface = @import("interface.zig");
-const mods = @import("mods.zig");
-const surface = @import("surface.zig");
-const thud = @import("thud.zig");
-const render_manager = @import("render_manager.zig");
 
 comptime {
     _ = @import("api.zig");
@@ -34,7 +29,7 @@ fn load(_: *sdk.IServerPluginCallbacks, interfaceFactory: sdk.CreateInterfaceFn,
         return false;
     };
 
-    Wormhole.getInst().init() catch |err| {
+    Wormhole.getInstUnchecked().init() catch |err| {
         std.log.err("Error initializing Wormhole: {s}", .{@errorName(err)});
         return false;
     };
@@ -43,8 +38,8 @@ fn load(_: *sdk.IServerPluginCallbacks, interfaceFactory: sdk.CreateInterfaceFn,
 }
 
 fn unload(_: *sdk.IServerPluginCallbacks) callconv(Method) void {
-    if (Wormhole.getInst().load_state != .loaded) return;
-    Wormhole.getInst().deinit();
+    if (Wormhole.getInstUnchecked().load_state != .loaded) return;
+    Wormhole.getInstUnchecked().deinit();
     tier0.ready = false;
 }
 

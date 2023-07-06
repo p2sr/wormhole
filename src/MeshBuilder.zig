@@ -1,5 +1,5 @@
 const sdk = @import("sdk");
-const ifaces = &@import("interface.zig").ifaces;
+const Wormhole = @import("Wormhole.zig");
 
 const MeshBuilder = @This();
 
@@ -24,7 +24,8 @@ cur_vert_data: struct {
 },
 
 pub fn init(material: *sdk.IMaterial, lines: bool, max_verts: u32, max_indices: u32) MeshBuilder {
-    const render_ctx = ifaces.IMaterialSystem.getRenderContext();
+    const IMaterialSystem = Wormhole.getInst().interface_manager.ifaces.IMaterialSystem;
+    const render_ctx = IMaterialSystem.getRenderContext();
     render_ctx.beginRender();
 
     render_ctx.matrixMode(.projection);

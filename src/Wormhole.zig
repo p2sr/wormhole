@@ -7,7 +7,7 @@ const sdk = @import("sdk");
 const assert = std.debug.assert;
 
 const Wormhole = @This();
-const interface = @import("interface.zig");
+const InterfaceManager = @import("InterfaceManager.zig");
 const mods = @import("mods.zig");
 const surface = @import("surface.zig");
 const thud = @import("thud.zig");
@@ -15,8 +15,16 @@ const render_manager = @import("render_manager.zig");
 
 /// Gets the global Wormhole instance. Use of this function is discouraged, and
 /// should only occur on API boundaries where there is no other reference to the
-/// instance.
+/// instance. Asserts that Wormhole is loading or loaded.
+/// TODO: change the assertion to only allow loaded. Currently not possible since getInst is used in init.
 pub fn getInst() *Wormhole {
+    const wh = getInstUnchecked();
+    assert(wh.load_state != .unloaded);
+    return wh;
+}
+
+/// Like `getInst`, but does not assert that Wormhole is loaded.
+pub fn getInstUnchecked() *Wormhole {
     const S = struct {
         var inst: Wormhole = inst: {
             var wh: Wormhole = undefined;
@@ -53,6 +61,7 @@ gpa: std.mem.Allocator,
 /// fighting with each other across reloads.
 resource_prefix: u32,
 
+interface_manager: InterfaceManager,
 // TODO: transition other global state here
 
 var gpa_state: std.heap.GeneralPurposeAllocator(.{
@@ -76,8 +85,8 @@ pub fn init(wh: *Wormhole) !void {
 
     if (!sdk.init()) return error.SdkInitError;
 
-    try interface.init(wh.gpa);
-    errdefer interface.deinit();
+    wh.interface_manager = try InterfaceManager.init(wh);
+    errdefer wh.interface_manager.deinit();
 
     surface.init(wh.gpa);
 
@@ -97,7 +106,7 @@ pub fn deinit(wh: *Wormhole) void {
     render_manager.deinit();
     thud.deinit();
     mods.deinit();
-    interface.deinit();
+    wh.interface_manager.deinit();
 
     _ = gpa_state.deinit();
 

@@ -1,8 +1,7 @@
 const std = @import("std");
 const sdk = @import("sdk");
+const Wormhole = @import("Wormhole.zig");
 const event = @import("event.zig");
-const ifaces = &@import("interface.zig").ifaces;
-const orig = &@import("interface.zig").orig;
 
 var count: u8 = 0;
 
@@ -20,7 +19,8 @@ fn readFuncPtr(comptime T: type, func: anytype, offset: usize) T {
 
 IEngineVGuiInternal: struct {
     pub fn paint(self: *sdk.IEngineVGuiInternal, mode: sdk.PaintMode) callconv(Method) void {
-        var ret = orig.IEngineVGuiInternal.paint(self, mode);
+        const orig = Wormhole.getInst().interface_manager.orig.IEngineVGuiInternal;
+        var ret = orig.paint(self, mode);
 
         if (mode.ui_panels) {
             @import("thud.zig").drawAll(0);
@@ -32,9 +32,10 @@ IEngineVGuiInternal: struct {
 
 IServerGameDLL: struct {
     pub fn gameFrame(self: *sdk.IServerGameDLL, simulating: bool) callconv(Method) void {
+        const orig = Wormhole.getInst().interface_manager.orig.IServerGameDLL;
         var sim1 = simulating;
         event.trigger(null, "pre_tick", &sim1);
-        var ret = orig.IServerGameDLL.gameFrame(self, simulating);
+        var ret = orig.gameFrame(self, simulating);
         event.trigger(null, "post_tick", &sim1);
         return ret;
     }

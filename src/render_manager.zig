@@ -2,7 +2,6 @@ const std = @import("std");
 const sdk = @import("sdk");
 const fc = @import("fontconfig");
 const FontManager = @import("fontmanager").FontManager(FontTextureContext);
-const ifaces = &@import("interface.zig").ifaces;
 const MeshBuilder = @import("MeshBuilder.zig");
 const Wormhole = @import("Wormhole.zig");
 
@@ -144,7 +143,8 @@ const TextureManager = struct {
         const name_owned = try allocator.dupeZ(u8, name);
         errdefer allocator.free(name_owned);
 
-        const matsys_tex = ifaces.IMaterialSystem.createProceduralTexture(name_owned.ptr, "Wormhole textures", @intCast(w), @intCast(h), .bgra8888, .{
+        const IMaterialSystem = Wormhole.getInst().interface_manager.ifaces.IMaterialSystem;
+        const matsys_tex = IMaterialSystem.createProceduralTexture(name_owned.ptr, "Wormhole textures", @intCast(w), @intCast(h), .bgra8888, .{
             .clamp_s = true,
             .clamp_t = true,
             .no_mip = true,
@@ -253,7 +253,8 @@ fn createMaterial(mat_name: [:0]const u8, tex_name: ?[]const u8, no_depth: bool)
     if (no_depth) try kv.setInt("$ignorez", 1);
     if (tex_name) |tex| try kv.setString("$basetexture", tex);
 
-    return ifaces.IMaterialSystem.createMaterial(mat_name.ptr, kv) orelse error.MaterialInitError;
+    const IMaterialSystem = Wormhole.getInst().interface_manager.ifaces.IMaterialSystem;
+    return IMaterialSystem.createMaterial(mat_name.ptr, kv) orelse error.MaterialInitError;
 }
 
 pub fn init(allocator1: std.mem.Allocator) !void {

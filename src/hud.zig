@@ -1,6 +1,6 @@
 const std = @import("std");
+const Wormhole = @import("Wormhole.zig");
 const surface = @import("surface.zig");
-const ifaces = &@import("interface.zig").ifaces;
 
 pub fn Hud(comptime Context: type) type {
     return struct {
@@ -34,10 +34,11 @@ pub fn Hud(comptime Context: type) type {
         pub fn draw(self: *Self, slot: u8) void {
             // TODO: get the size for this slot's "sub-screen" if we're
             // in splitscreen
+            const IVEngineClient = Wormhole.getInst().interface_manager.ifaces.IVEngineClient;
             const screen_size: @Vector(2, i32) = blk: {
                 var x: c_int = undefined;
                 var y: c_int = undefined;
-                ifaces.IVEngineClient.getScreenSize(&x, &y);
+                IVEngineClient.getScreenSize(&x, &y);
                 break :blk .{ x, y };
             };
 
